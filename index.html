@@ -148,36 +148,22 @@
 
   // AUDIO - init on first user touch of the whole page
   var audioCtx = null;
-  var audioReady = false;
 
-  function initAudio() {
-    if (audioReady) return;
+  // Called directly inside every user tap handler
+  function ensureAudio() {
     try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      // Play a silent buffer to unlock audio on iOS
-      var silentBuf = audioCtx.createBuffer(1, 1, 22050);
-      var src = audioCtx.createBufferSource();
-      src.buffer = silentBuf;
-      src.connect(audioCtx.destination);
-      src.start(0);
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      audioReady = true;
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
     } catch(e) {}
   }
 
-  // Unlock audio on very first touch anywhere
-  document.addEventListener('touchstart', function unlock() {
-    initAudio();
-    document.removeEventListener('touchstart', unlock);
-  }, false);
-  document.addEventListener('click', function unlock() {
-    initAudio();
-    document.removeEventListener('click', unlock);
-  }, false);
-
   function playDrumSound(type) {
-    if (!audioCtx || !audioReady) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    ensureAudio();
+    if (!audioCtx) return;
     var now = audioCtx.currentTime;
     var noise, buf, data, g, f, osc, og;
 
@@ -310,7 +296,7 @@
 
   window.selectSong = function(e, idx) {
     if (!isTap(e)) return;
-    initAudio();
+    ensureAudio();
     var btns = document.querySelectorAll('.song-btn');
     for (var i = 0; i < btns.length; i++) btns[i].className = 'song-btn';
     btns[idx].className = 'song-btn selected';
@@ -319,7 +305,7 @@
 
   window.startGame = function(e) {
     if (!isTap(e)) return;
-    initAudio();
+    ensureAudio();
     state.songData = generateSong(state.selectedSong);
     state.score = 0; state.combo = 0; state.maxCombo = 0; state.multiplier = 1;
     state.perfects = 0; state.goods = 0; state.misses = 0;

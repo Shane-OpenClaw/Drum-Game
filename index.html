@@ -48,20 +48,16 @@
     position: absolute; top: 0; left: 0; right: 0;
     display: flex; justify-content: space-between; align-items: center;
     padding: 10px 15px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
-    z-index: 10; font-size: 3vw;
+    z-index: 10; font-size: 3.5vw;
   }
   #score { color: #ff1493; text-shadow: 0 0 10px #ff1493; }
   #combo { color: #00d4ff; text-shadow: 0 0 10px #00d4ff; }
   #songTitle { color: #ffcc00; font-size: 2.5vw; text-shadow: 0 0 10px #ffcc00; }
   #multiplier { color: #00ff88; text-shadow: 0 0 10px #00ff88; }
   canvas { display: block; width: 100%; height: 100%; }
-  #hitZone {
-    position: absolute; bottom: 12%; left: 0; right: 0; height: 4px;
-    background: rgba(255,255,255,0.3); z-index: 5; pointer-events: none;
-  }
   #feedbackText {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 7vw; font-weight: bold; z-index: 20; pointer-events: none;
+    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 8vw; font-weight: bold; z-index: 20; pointer-events: none;
     opacity: 0; transition: opacity 0.15s; text-shadow: 0 0 20px currentColor;
   }
   #endScreen {
@@ -79,11 +75,13 @@
     display: flex; z-index: 8;
   }
   .touch-lane {
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    border: 1px solid rgba(255,255,255,0.1);
+    flex: 1; display: flex; align-items: flex-end; justify-content: center;
+    border-left: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 3vh;
   }
-  .touch-lane.pressed { background: rgba(255,255,255,0.15); }
-  .key-hint { font-size: 3vw; opacity: 0.4; pointer-events: none; position: absolute; bottom: 5%; }
+  .touch-lane:first-child { border-left: none; }
+  .touch-lane.pressed { background: rgba(255,255,255,0.1); }
+  .key-hint { font-size: 2.5vw; opacity: 0.5; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -100,7 +98,7 @@
     <button class="song-btn" ontouchstart="selectSong(event,4)" onclick="selectSong(event,4)">ONE MORE TIME</button>
   </div>
   <button class="start-btn" ontouchstart="startGame(event)" onclick="startGame(event)">PLAY</button>
-  <div style="margin-top:20px;font-size:12px;color:#666;">TAP LANES or KEYS: D F J K</div>
+  <div style="margin-top:20px;font-size:12px;color:#666;">TAP THE COLUMN WHEN A NOTE REACHES THE LINE</div>
 </div>
 
 <div id="gameArea">
@@ -111,7 +109,6 @@
     <span id="multiplier">x1</span>
   </div>
   <canvas id="gameCanvas"></canvas>
-  <div id="hitZone"></div>
   <div id="feedbackText"></div>
   <div class="touch-lanes" id="touchLanes">
     <div class="touch-lane" data-lane="0"><span class="key-hint" style="color:#ff1493">SNARE</span></div>
@@ -138,7 +135,6 @@
 
 <script>
 (function() {
-  // Prevent double-fire from touch+click
   var lastTap = 0;
   function isTap(e) {
     if (e && e.type === 'touchstart') {
@@ -150,17 +146,38 @@
     return true;
   }
 
+  // AUDIO - init on first user touch of the whole page
   var audioCtx = null;
-  function ensureAudio() {
+  var audioReady = false;
+
+  function initAudio() {
+    if (audioReady) return;
     try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      // Play a silent buffer to unlock audio on iOS
+      var silentBuf = audioCtx.createBuffer(1, 1, 22050);
+      var src = audioCtx.createBufferSource();
+      src.buffer = silentBuf;
+      src.connect(audioCtx.destination);
+      src.start(0);
       if (audioCtx.state === 'suspended') audioCtx.resume();
+      audioReady = true;
     } catch(e) {}
   }
 
+  // Unlock audio on very first touch anywhere
+  document.addEventListener('touchstart', function unlock() {
+    initAudio();
+    document.removeEventListener('touchstart', unlock);
+  }, false);
+  document.addEventListener('click', function unlock() {
+    initAudio();
+    document.removeEventListener('click', unlock);
+  }, false);
+
   function playDrumSound(type) {
-    ensureAudio();
-    if (!audioCtx) return;
+    if (!audioCtx || !audioReady) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     var now = audioCtx.currentTime;
     var noise, buf, data, g, f, osc, og;
 
@@ -170,11 +187,11 @@
       data = buf.getChannelData(0);
       for (var i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
       noise.buffer = buf;
-      g = audioCtx.createGain(); g.gain.setValueAtTime(0.6, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      g = audioCtx.createGain(); g.gain.setValueAtTime(0.8, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
       f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1000;
       noise.connect(f); f.connect(g); g.connect(audioCtx.destination); noise.start(now);
       osc = audioCtx.createOscillator(); osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.08);
-      og = audioCtx.createGain(); og.gain.setValueAtTime(0.4, now); og.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      og = audioCtx.createGain(); og.gain.setValueAtTime(0.5, now); og.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
       osc.connect(og); og.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.08);
     } else if (type === 1) { // hi-hat
       noise = audioCtx.createBufferSource();
@@ -182,12 +199,12 @@
       data = buf.getChannelData(0);
       for (var i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 5);
       noise.buffer = buf;
-      g = audioCtx.createGain(); g.gain.setValueAtTime(0.3, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      g = audioCtx.createGain(); g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
       f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 5000;
       noise.connect(f); f.connect(g); g.connect(audioCtx.destination); noise.start(now);
     } else if (type === 2) { // tom
       osc = audioCtx.createOscillator(); osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
-      g = audioCtx.createGain(); g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      g = audioCtx.createGain(); g.gain.setValueAtTime(0.7, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
       osc.connect(g); g.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.2);
     } else { // crash
       noise = audioCtx.createBufferSource();
@@ -195,7 +212,7 @@
       data = buf.getChannelData(0);
       for (var i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 1.5);
       noise.buffer = buf;
-      g = audioCtx.createGain(); g.gain.setValueAtTime(0.35, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      g = audioCtx.createGain(); g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
       f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 3000; f.Q.value = 0.5;
       noise.connect(f); f.connect(g); g.connect(audioCtx.destination); noise.start(now);
     }
@@ -206,14 +223,10 @@
 
     if (idx === 0) { // All The Small Things
       bpm = 80; beat = 60000 / bpm; duration = 40000;
-      // Intro - one note every 2 beats
       for (t = 3000; t < 10000; t += beat * 2) { notes.push([t, 1]); }
-      // Verse - alternate hi-hat and snare
       for (t = 10000; t < 22000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      // Chorus - cycle through all 4
       for (t = 22000; t < 34000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
       for (t = 22000; t < 34000; t += beat * 8) { notes.push([t, 3]); }
-      // Outro
       for (t = 34000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 2]); }
       return { notes: notes, duration: duration, name: "ALL THE SMALL THINGS", bpm: bpm };
     }
@@ -231,7 +244,6 @@
       for (t = 2000; t < 10000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
       for (t = 10000; t < 22000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
       for (t = 10000; t < 22000; t += beat * 8) { notes.push([t, 3]); }
-      // Breakdown - just snare and tom alternating
       for (t = 22000; t < 28000; t += beat * 2) { notes.push([t, 0]); notes.push([t + beat, 2]); }
       notes.push([28000, 3]);
       for (t = 28000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
@@ -239,41 +251,29 @@
     }
     if (idx === 3) { // Feeling This
       bpm = 85; beat = 60000 / bpm; duration = 40000;
-      // Intro - tom hits every 2 beats
       for (t = 1000; t < 4000; t += beat * 2) { notes.push([t, 2]); }
       notes.push([4500, 3]);
-      // Verse
       for (t = 5000; t < 16000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      // Chorus
       for (t = 16000; t < 28000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
       for (t = 16000; t < 28000; t += beat * 8) { notes.push([t, 3]); }
-      // Fill - one lane at a time
       notes.push([28000, 0]); notes.push([28000 + beat, 2]); notes.push([28000 + beat * 2, 1]); notes.push([28000 + beat * 3, 3]);
-      // Outro
       for (t = 32000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
       return { notes: notes, duration: duration, name: "FEELING THIS", bpm: bpm };
     }
     // ONE MORE TIME
     bpm = 75; beat = 60000 / bpm; duration = 44000;
-    // Intro - very spacious
     for (t = 3000; t < 10000; t += beat * 2) { notes.push([t, 1]); }
     notes.push([10000, 3]);
-    // Verse
     for (t = 10500; t < 22000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-    // Pre-chorus
     for (t = 22000; t < 26000; t += beat * 2) { notes.push([t, 2]); notes.push([t + beat, 0]); }
     notes.push([26000, 3]);
-    // Chorus
     for (t = 26500; t < 36000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
     for (t = 26500; t < 36000; t += beat * 8) { notes.push([t, 3]); }
-    // Bridge
     for (t = 36000; t < 40000; t += beat * 2) { notes.push([t, 0]); }
-    // Outro
     for (t = 40000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
     return { notes: notes, duration: duration, name: "ONE MORE TIME", bpm: bpm };
   }
 
-  // State
   var state = {
     score: 0, combo: 0, maxCombo: 0, multiplier: 1,
     perfects: 0, goods: 0, misses: 0,
@@ -283,8 +283,12 @@
   };
 
   var LANE_COLORS = ['#ff1493', '#00d4ff', '#00ff88', '#ffcc00'];
-  var PERFECT_WINDOW = 250, GOOD_WINDOW = 400, MISS_WINDOW = 600;
-  var NOTE_SPEED = 0.15, HIT_Y_RATIO = 0.88;
+  // Super generous - if the note is anywhere visible on screen, you can hit it
+  var PERFECT_WINDOW = 400;
+  var GOOD_WINDOW = 800;
+  var MISS_WINDOW = 1200;
+  var NOTE_SPEED = 0.12;
+  var HIT_Y_RATIO = 0.82;
 
   var canvas = document.getElementById('gameCanvas');
   var ctx = canvas.getContext('2d');
@@ -304,9 +308,9 @@
   window.addEventListener('resize', resize);
   resize();
 
-  // Global functions for inline handlers
   window.selectSong = function(e, idx) {
     if (!isTap(e)) return;
+    initAudio();
     var btns = document.querySelectorAll('.song-btn');
     for (var i = 0; i < btns.length; i++) btns[i].className = 'song-btn';
     btns[idx].className = 'song-btn selected';
@@ -315,7 +319,7 @@
 
   window.startGame = function(e) {
     if (!isTap(e)) return;
-    ensureAudio();
+    initAudio();
     state.songData = generateSong(state.selectedSong);
     state.score = 0; state.combo = 0; state.maxCombo = 0; state.multiplier = 1;
     state.perfects = 0; state.goods = 0; state.misses = 0;
@@ -347,7 +351,6 @@
 
     if (state.songTime > state.songData.duration + 2000) { endGame(); return; }
 
-    // Check misses
     for (var i = 0; i < state.activeNotes.length; i++) {
       var n = state.activeNotes[i];
       if (!n.hit && !n.missed && state.songTime > n.time + MISS_WINDOW) {
@@ -365,27 +368,50 @@
 
     // Lane dividers
     for (var i = 1; i < 4; i++) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(i * laneW, 0); ctx.lineTo(i * laneW, H); ctx.stroke();
     }
 
-    // Notes
+    // HIT LINE - thick and glowing
+    ctx.save();
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 15;
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(W, hitY); ctx.stroke();
+    ctx.restore();
+
+    // Label the hit line
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px Courier New';
+    ctx.fillText('TAP HERE', 5, hitY - 8);
+
+    // Notes - BIG
     for (var i = 0; i < state.activeNotes.length; i++) {
       var n = state.activeNotes[i];
       if (n.hit || n.missed) continue;
       var dt = n.time - state.songTime;
       var y = hitY - dt * NOTE_SPEED;
-      if (y < -40 || y > H + 40) continue;
+      if (y < -60 || y > H + 60) continue;
       var x = n.lane * laneW + laneW / 2;
-      var r = Math.min(laneW * 0.3, 28);
+      var r = Math.min(laneW * 0.38, 36);
       var col = LANE_COLORS[n.lane];
-      var grad = ctx.createRadialGradient(x, y, 0, x, y, r * 2);
-      grad.addColorStop(0, col + '44'); grad.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad; ctx.fillRect(x - r * 2, y - r * 2, r * 4, r * 4);
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill();
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.beginPath(); ctx.arc(x, y, r * 0.5, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.3; ctx.fill(); ctx.globalAlpha = 1;
+
+      // Glow
+      ctx.save();
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 20;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = col; ctx.fill();
+      ctx.restore();
+
+      // Border
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+
+      // Inner highlight
+      ctx.beginPath(); ctx.arc(x, y, r * 0.4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fill();
     }
 
     drawParticles();
@@ -393,10 +419,10 @@
   }
 
   function spawnParticles(x, y, color) {
-    for (var i = 0; i < 12; i++) {
-      var angle = (Math.PI * 2 / 12) * i + Math.random() * 0.3;
-      var speed = 2 + Math.random() * 4;
-      particles.push({ x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1, color: color, size: 2 + Math.random() * 3 });
+    for (var i = 0; i < 15; i++) {
+      var angle = (Math.PI * 2 / 15) * i + Math.random() * 0.3;
+      var speed = 3 + Math.random() * 5;
+      particles.push({ x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1, color: color, size: 3 + Math.random() * 4 });
     }
   }
 
@@ -404,7 +430,7 @@
     var alive = [];
     for (var i = 0; i < particles.length; i++) {
       var p = particles[i];
-      p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+      p.x += p.vx; p.y += p.vy; p.life -= 0.025;
       if (p.life <= 0) continue;
       ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
       ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
@@ -418,27 +444,47 @@
     var el = document.getElementById('feedbackText');
     el.textContent = text; el.style.color = color; el.style.opacity = 1;
     clearTimeout(feedbackTimer);
-    feedbackTimer = setTimeout(function() { el.style.opacity = 0; }, 300);
+    feedbackTimer = setTimeout(function() { el.style.opacity = 0; }, 400);
   }
 
   function hitLane(lane) {
     if (!state.running) return;
-    ensureAudio();
     playDrumSound(lane);
+
+    // Flash the lane
+    var lanes = document.querySelectorAll('.touch-lane');
+    lanes[lane].className = 'touch-lane pressed';
+    setTimeout(function() { lanes[lane].className = 'touch-lane'; }, 150);
+
     var hitY = H * HIT_Y_RATIO;
+
+    // Find the NEXT unhit note in this lane - super generous matching
     var closest = null, closestDt = Infinity;
     for (var i = 0; i < state.activeNotes.length; i++) {
       var n = state.activeNotes[i];
       if (n.lane !== lane || n.hit || n.missed) continue;
-      var dt = Math.abs(n.time - state.songTime);
-      if (dt < closestDt && dt < MISS_WINDOW) { closest = n; closestDt = dt; }
+      var dt = n.time - state.songTime; // positive = note hasn't reached line yet
+      var absDt = Math.abs(dt);
+      // Hit if within window OR if the note is visible on screen and approaching
+      if (absDt < MISS_WINDOW || (dt > 0 && dt < 2000)) {
+        if (absDt < closestDt) { closest = n; closestDt = absDt; }
+      }
     }
     if (closest) {
       closest.hit = true;
-      spawnParticles(lane * laneW + laneW / 2, hitY, LANE_COLORS[lane]);
-      if (closestDt < PERFECT_WINDOW) { state.perfects++; state.score += 100 * state.multiplier; state.combo++; showFeedback('PERFECT!', '#00ff88'); }
-      else if (closestDt < GOOD_WINDOW) { state.goods++; state.score += 50 * state.multiplier; state.combo++; showFeedback('GOOD', '#00d4ff'); }
-      else { state.goods++; state.score += 25 * state.multiplier; state.combo++; showFeedback('OK', '#ffcc00'); }
+      var noteY = hitY - (closest.time - state.songTime) * NOTE_SPEED;
+      spawnParticles(lane * laneW + laneW / 2, noteY, LANE_COLORS[lane]);
+
+      if (closestDt < PERFECT_WINDOW) {
+        state.perfects++; state.score += 100 * state.multiplier; state.combo++;
+        showFeedback('PERFECT!', '#00ff88');
+      } else if (closestDt < GOOD_WINDOW) {
+        state.goods++; state.score += 50 * state.multiplier; state.combo++;
+        showFeedback('GOOD', '#00d4ff');
+      } else {
+        state.goods++; state.score += 25 * state.multiplier; state.combo++;
+        showFeedback('OK', '#ffcc00');
+      }
       if (state.combo > state.maxCombo) state.maxCombo = state.combo;
       if (state.combo >= 40) state.multiplier = 4;
       else if (state.combo >= 20) state.multiplier = 3;
@@ -454,17 +500,17 @@
     if (lane !== undefined) { e.preventDefault(); hitLane(lane); }
   });
 
-  // Touch lanes
+  // Touch lanes - full screen
   var lanes = document.querySelectorAll('.touch-lane');
   for (var i = 0; i < lanes.length; i++) {
     (function(el) {
       el.addEventListener('touchstart', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         hitLane(parseInt(el.getAttribute('data-lane')));
-        el.className = 'touch-lane pressed';
-        setTimeout(function() { el.className = 'touch-lane'; }, 100);
       }, { passive: false });
-      el.addEventListener('mousedown', function() {
+      el.addEventListener('mousedown', function(e) {
+        e.preventDefault();
         hitLane(parseInt(el.getAttribute('data-lane')));
       });
     })(lanes[i]);

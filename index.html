@@ -152,72 +152,83 @@
 
   // ==== AUDIO ENGINE ====
   var actx = null;
+  var audioUnlocked = false;
   function getCtx() {
-    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
-    if (actx && actx.state === 'suspended') actx.resume();
+    if (!actx) {
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        actx = new AC();
+      } catch(e) { return null; }
+    }
+    if (actx.state === 'suspended') actx.resume();
     return actx;
   }
 
-  // -- DRUM MASTER GAIN (drums louder than backing) --
-  var drumGain = null;
-  function getDrumBus() {
-    var ctx = getCtx(); if (!ctx) return null;
-    if (!drumGain) {
-      drumGain = ctx.createGain();
-      drumGain.gain.value = 3.0; // drums 3x louder than backing
-      drumGain.connect(ctx.destination);
-    }
-    return drumGain;
+  // iOS requires a silent buffer play on first touch to truly unlock audio
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    var ctx = getCtx(); if (!ctx) return;
+    var buf = ctx.createBuffer(1, 1, 22050);
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    ctx.resume().then(function() { audioUnlocked = true; });
+    audioUnlocked = true; // optimistic
   }
+
+  // Unlock on ANY first touch on the page
+  document.addEventListener('touchstart', function() { unlockAudio(); }, { once: true });
+  document.addEventListener('touchend', function() { unlockAudio(); }, { once: true });
+  document.addEventListener('click', function() { unlockAudio(); }, { once: true });
 
   // -- DRUM SOUNDS --
   function playDrum(type) {
     var ctx = getCtx(); if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-    var bus = getDrumBus(); if (!bus) return;
+    var dest = ctx.destination;
     var now = ctx.currentTime, g, osc, noise, buf, data, f, g2;
     if (type === 0) { // crash
       noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.6, ctx.sampleRate); data = buf.getChannelData(0);
       for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,1.0)*0.7;
       noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.6);
-      noise.connect(g); g.connect(bus); noise.start(now);
+      noise.connect(g); g.connect(dest); noise.start(now);
     } else if (type === 1) { // ride
       noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.3, ctx.sampleRate); data = buf.getChannelData(0);
       for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2.5)*0.5;
       noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.6,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.3);
       f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=3500;
-      noise.connect(f); f.connect(g); g.connect(bus); noise.start(now);
+      noise.connect(f); f.connect(g); g.connect(dest); noise.start(now);
     } else if (type === 2) { // hihat
       noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.08, ctx.sampleRate); data = buf.getChannelData(0);
       for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,4)*0.7;
       noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.7,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.08);
       f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=5000;
-      noise.connect(f); f.connect(g); g.connect(bus); noise.start(now);
+      noise.connect(f); f.connect(g); g.connect(dest); noise.start(now);
     } else if (type === 3) { // tom hi
       osc=ctx.createOscillator(); osc.frequency.setValueAtTime(220,now); osc.frequency.exponentialRampToValueAtTime(80,now+0.18);
       g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.18);
-      osc.connect(g); g.connect(bus); osc.start(now); osc.stop(now+0.18);
+      osc.connect(g); g.connect(dest); osc.start(now); osc.stop(now+0.18);
     } else if (type === 4) { // snare
       noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.15, ctx.sampleRate); data = buf.getChannelData(0);
       for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2.5)*0.9;
       noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.15);
       f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=1200;
-      noise.connect(f); f.connect(g); g.connect(bus); noise.start(now);
+      noise.connect(f); f.connect(g); g.connect(dest); noise.start(now);
       osc=ctx.createOscillator(); osc.frequency.setValueAtTime(200,now); osc.frequency.exponentialRampToValueAtTime(60,now+0.08);
       g2=ctx.createGain(); g2.gain.setValueAtTime(0.6,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.08);
-      osc.connect(g2); g2.connect(bus); osc.start(now); osc.stop(now+0.08);
+      osc.connect(g2); g2.connect(dest); osc.start(now); osc.stop(now+0.08);
     } else if (type === 5) { // tom lo
       osc=ctx.createOscillator(); osc.frequency.setValueAtTime(140,now); osc.frequency.exponentialRampToValueAtTime(45,now+0.25);
       g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.25);
-      osc.connect(g); g.connect(bus); osc.start(now); osc.stop(now+0.25);
+      osc.connect(g); g.connect(dest); osc.start(now); osc.stop(now+0.25);
     } else { // kick
       osc=ctx.createOscillator(); osc.frequency.setValueAtTime(180,now); osc.frequency.exponentialRampToValueAtTime(25,now+0.18);
       g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.25);
-      osc.connect(g); g.connect(bus); osc.start(now); osc.stop(now+0.25);
+      osc.connect(g); g.connect(dest); osc.start(now); osc.stop(now+0.25);
       noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.03, ctx.sampleRate); data = buf.getChannelData(0);
       for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,8)*0.5;
       noise.buffer=buf; g2=ctx.createGain(); g2.gain.setValueAtTime(0.5,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.03);
-      noise.connect(g2); g2.connect(bus); noise.start(now);
+      noise.connect(g2); g2.connect(dest); noise.start(now);
     }
   }
 
@@ -227,7 +238,7 @@
 
   function stopBacking() {
     for (var i=0; i<backingNodes.length; i++) { try{backingNodes[i].stop();}catch(e){} try{backingNodes[i].disconnect();}catch(e){} }
-    backingNodes = []; drumGain = null;
+    backingNodes = [];
     if (backingTimer) { clearInterval(backingTimer); backingTimer = null; }
   }
 

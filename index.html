@@ -75,7 +75,7 @@
   .stat-val { color: #00d4ff; }
   #grade { font-size: 15vw; margin: 20px 0; text-shadow: 0 0 30px currentColor; }
   .touch-lanes {
-    position: absolute; bottom: 0; left: 0; right: 0; height: 20%;
+    position: absolute; bottom: 0; left: 0; right: 0; height: 40%;
     display: flex; z-index: 8;
   }
   .touch-lane {
@@ -204,68 +204,72 @@
   function generateSong(idx) {
     var notes = [], bpm, duration, beat, t;
 
-    if (idx === 0) { // All The Small Things - easy
-      bpm = 120; beat = 60000 / bpm; duration = 40000;
-      // Intro - just hi-hat quarter notes
-      for (t = 3000; t < 10000; t += beat) { notes.push([t, 1]); }
-      // Verse - hi-hat + snare on 3
-      for (t = 10000; t < 22000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t + beat, 0]); }
-      // Chorus - add crash every 4 beats
-      for (t = 22000; t < 34000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
-      // Outro - add toms
-      for (t = 34000; t < duration; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 2]); }
+    if (idx === 0) { // All The Small Things
+      bpm = 80; beat = 60000 / bpm; duration = 40000;
+      // Intro - one note every 2 beats
+      for (t = 3000; t < 10000; t += beat * 2) { notes.push([t, 1]); }
+      // Verse - alternate hi-hat and snare
+      for (t = 10000; t < 22000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
+      // Chorus - cycle through all 4
+      for (t = 22000; t < 34000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
+      for (t = 22000; t < 34000; t += beat * 8) { notes.push([t, 3]); }
+      // Outro
+      for (t = 34000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 2]); }
       return { notes: notes, duration: duration, name: "ALL THE SMALL THINGS", bpm: bpm };
     }
-    if (idx === 1) { // What's My Age Again - easy
-      bpm = 130; beat = 60000 / bpm; duration = 38000;
-      for (t = 2000; t < 12000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
-      for (t = 12000; t < 26000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
-      // Slightly busier section - 8th notes briefly
-      for (t = 26000; t < 32000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 2]); }
-      for (t = 32000; t < duration; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
+    if (idx === 1) { // What's My Age Again
+      bpm = 85; beat = 60000 / bpm; duration = 38000;
+      for (t = 2000; t < 12000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
+      for (t = 12000; t < 26000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
+      for (t = 12000; t < 26000; t += beat * 8) { notes.push([t, 3]); }
+      for (t = 26000; t < 32000; t += beat * 2) { notes.push([t, 2]); notes.push([t + beat, 0]); }
+      for (t = 32000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
       return { notes: notes, duration: duration, name: "WHAT'S MY AGE AGAIN?", bpm: bpm };
     }
-    if (idx === 2) { // Dammit - medium (was way too fast at 215)
-      bpm = 140; beat = 60000 / bpm; duration = 36000;
-      for (t = 2000; t < 10000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
-      for (t = 10000; t < 22000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
-      // Breakdown - simple alternating
-      for (t = 22000; t < 28000; t += beat) { notes.push([t, (t % (beat * 2) < 10) ? 0 : 2]); }
+    if (idx === 2) { // Dammit
+      bpm = 90; beat = 60000 / bpm; duration = 36000;
+      for (t = 2000; t < 10000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
+      for (t = 10000; t < 22000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
+      for (t = 10000; t < 22000; t += beat * 8) { notes.push([t, 3]); }
+      // Breakdown - just snare and tom alternating
+      for (t = 22000; t < 28000; t += beat * 2) { notes.push([t, 0]); notes.push([t + beat, 2]); }
       notes.push([28000, 3]);
-      for (t = 28000; t < duration; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
+      for (t = 28000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
       return { notes: notes, duration: duration, name: "DAMMIT", bpm: bpm };
     }
-    if (idx === 3) { // Feeling This - medium
-      bpm = 135; beat = 60000 / bpm; duration = 40000;
-      // Intro - tom hits
-      for (t = 1000; t < 4000; t += beat) { notes.push([t, 2]); }
-      notes.push([4000, 3]);
+    if (idx === 3) { // Feeling This
+      bpm = 85; beat = 60000 / bpm; duration = 40000;
+      // Intro - tom hits every 2 beats
+      for (t = 1000; t < 4000; t += beat * 2) { notes.push([t, 2]); }
+      notes.push([4500, 3]);
       // Verse
-      for (t = 4000; t < 16000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
-      // Chorus - crashes
-      for (t = 16000; t < 28000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
-      // Fill section - cycle through lanes but on quarter notes
-      for (t = 28000; t < 32000; t += beat) { notes.push([t, Math.floor((t - 28000) / beat) % 4]); }
+      for (t = 5000; t < 16000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
+      // Chorus
+      for (t = 16000; t < 28000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
+      for (t = 16000; t < 28000; t += beat * 8) { notes.push([t, 3]); }
+      // Fill - one lane at a time
+      notes.push([28000, 0]); notes.push([28000 + beat, 2]); notes.push([28000 + beat * 2, 1]); notes.push([28000 + beat * 3, 3]);
       // Outro
-      for (t = 32000; t < duration; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
+      for (t = 32000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
       return { notes: notes, duration: duration, name: "FEELING THIS", bpm: bpm };
     }
-    // ONE MORE TIME - easy/medium
-    bpm = 115; beat = 60000 / bpm; duration = 44000;
-    // Intro - spacious
+    // ONE MORE TIME
+    bpm = 75; beat = 60000 / bpm; duration = 44000;
+    // Intro - very spacious
     for (t = 3000; t < 10000; t += beat * 2) { notes.push([t, 1]); }
     notes.push([10000, 3]);
     // Verse
-    for (t = 10000; t < 22000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
-    // Pre-chorus - add toms
-    for (t = 22000; t < 26000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 2]); }
+    for (t = 10500; t < 22000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
+    // Pre-chorus
+    for (t = 22000; t < 26000; t += beat * 2) { notes.push([t, 2]); notes.push([t + beat, 0]); }
     notes.push([26000, 3]);
     // Chorus
-    for (t = 26000; t < 36000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
-    // Bridge - half time
-    for (t = 36000; t < 40000; t += beat * 2) { notes.push([t, 0]); notes.push([t, 3]); }
+    for (t = 26500; t < 36000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
+    for (t = 26500; t < 36000; t += beat * 8) { notes.push([t, 3]); }
+    // Bridge
+    for (t = 36000; t < 40000; t += beat * 2) { notes.push([t, 0]); }
     // Outro
-    for (t = 40000; t < duration; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
+    for (t = 40000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
     return { notes: notes, duration: duration, name: "ONE MORE TIME", bpm: bpm };
   }
 
@@ -279,8 +283,8 @@
   };
 
   var LANE_COLORS = ['#ff1493', '#00d4ff', '#00ff88', '#ffcc00'];
-  var PERFECT_WINDOW = 120, GOOD_WINDOW = 220, MISS_WINDOW = 320;
-  var NOTE_SPEED = 0.28, HIT_Y_RATIO = 0.88;
+  var PERFECT_WINDOW = 250, GOOD_WINDOW = 400, MISS_WINDOW = 600;
+  var NOTE_SPEED = 0.15, HIT_Y_RATIO = 0.88;
 
   var canvas = document.getElementById('gameCanvas');
   var ctx = canvas.getContext('2d');

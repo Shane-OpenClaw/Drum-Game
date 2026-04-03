@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sound Test</title>
+</head>
+<body style="background:#000;color:#fff;font-family:monospace;text-align:center;padding:40px;">
+<h1>SOUND TEST</h1>
+<p>Tap each button. If you hear nothing from ALL of them, check:<br>
+Settings > Sounds & Haptics > Ringer volume slider</p>
+<br>
+<button onclick="testWebAudio()" style="font-size:24px;padding:20px 40px;margin:10px;display:block;width:80%;margin:10px auto;">TEST 1: Web Audio API</button>
+<div id="r1" style="color:#888;margin-bottom:20px;">not tested</div>
+
+<button onclick="testHTMLAudio()" style="font-size:24px;padding:20px 40px;margin:10px;display:block;width:80%;margin:10px auto;">TEST 2: HTML5 Audio</button>
+<div id="r2" style="color:#888;margin-bottom:20px;">not tested</div>
+
+<button onclick="testOscillator()" style="font-size:24px;padding:20px 40px;margin:10px;display:block;width:80%;margin:10px auto;">TEST 3: Simple Beep</button>
+<div id="r3" style="color:#888;margin-bottom:20px;">not tested</div>
+
+<script>
+function testWebAudio() {
+  var el = document.getElementById('r1');
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    el.textContent = 'AudioContext state: ' + ctx.state;
+    ctx.resume().then(function() {
+      el.textContent = 'State after resume: ' + ctx.state;
+      var o = ctx.createOscillator();
+      o.frequency.value = 440;
+      o.connect(ctx.destination);
+      o.start();
+      setTimeout(function() { o.stop(); }, 500);
+      el.textContent += ' | Playing 440Hz for 0.5s';
+      el.style.color = '#0f0';
+    });
+  } catch(e) {
+    el.textContent = 'ERROR: ' + e.message;
+    el.style.color = '#f00';
+  }
+}
+
+function testHTMLAudio() {
+  var el = document.getElementById('r2');
+  try {
+    // Generate a WAV beep
+    var sr = 8000, dur = 0.5, len = sr * dur;
+    var buf = new ArrayBuffer(44 + len * 2);
+    var v = new DataView(buf);
+    function ws(o,s){for(var i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));}
+    ws(0,'RIFF'); v.setUint32(4,36+len*2,true); ws(8,'WAVE'); ws(12,'fmt ');
+    v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+    v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true);
+    v.setUint16(34,16,true); ws(36,'data'); v.setUint32(40,len*2,true);
+    for(var i=0;i<len;i++){var s=Math.sin(2*Math.PI*440*i/sr)*0.5;v.setInt16(44+i*2,s*32767,true);}
+    var bytes = new Uint8Array(buf), bin = '';
+    for(var i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+    var dataUri = 'data:audio/wav;base64,' + btoa(bin);
+    var audio = new Audio(dataUri);
+    audio.play().then(function() {
+      el.textContent = 'Playing WAV beep!';
+      el.style.color = '#0f0';
+    }).catch(function(e) {
+      el.textContent = 'Play blocked: ' + e.message;
+      el.style.color = '#f00';
+    });
+  } catch(e) {
+    el.textContent = 'ERROR: ' + e.message;
+    el.style.color = '#f00';
+  }
+}
+
+function testOscillator() {
+  var el = document.getElementById('r3');
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { el.textContent = 'No AudioContext!'; el.style.color='#f00'; return; }
+    var ctx = new AC();
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = 'square';
+    o.frequency.value = 800;
+    g.gain.value = 1.0;
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start(0);
+    el.textContent = 'Beeping! State: ' + ctx.state;
+    el.style.color = '#0f0';
+    setTimeout(function() {
+      o.stop();
+      el.textContent += ' | Stopped. Did you hear it?';
+    }, 1000);
+  } catch(e) {
+    el.textContent = 'ERROR: ' + e.message;
+    el.style.color = '#f00';
+  }
+}
+</script>
+</body>
+</html>

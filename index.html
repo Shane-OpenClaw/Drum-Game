@@ -172,12 +172,16 @@
     <button class="song-item" ontouchstart="pickSong(event,4)" onclick="pickSong(event,4)">ONE MORE TIME</button>
   </div>
   <button class="go-btn" ontouchstart="startJam(event)" onclick="startJam(event)">LET'S GO!</button>
+  <button class="go-btn" style="font-size:3.5vw;padding:8px 24px;background:#00d4ff;box-shadow:3px 3px 0 #fff;margin-top:6px;" ontouchstart="soundCheck(event)" onclick="soundCheck(event)">🔊 SOUND CHECK</button>
+  <div id="soundStatus" style="font-size:2.5vw;color:#00ff88;margin-top:6px;min-height:1.5em;"></div>
   <div class="instructions">
     <strong>HOW TO PLAY:</strong><br>
-    1. Pick a song & hit GO<br>
-    2. Press play on the Apple Music player<br>
-    3. TAP THE DRUMS - you're Travis Barker!<br>
-    4. Bring the beat! 🤘
+    1. Turn OFF your <strong style="color:#ffcc00">silent/mute switch</strong> (left side of iPhone!)<br>
+    2. Turn <strong style="color:#ffcc00">volume up</strong><br>
+    3. Hit SOUND CHECK to test<br>
+    4. Pick a song & hit GO<br>
+    5. Press ▶ on the Apple Music player<br>
+    6. TAP THE DRUMS - you're Travis Barker! 🤘
   </div>
 </div>
 
@@ -283,6 +287,36 @@
   ];
 
   var curSong = 0;
+
+  window.soundCheck = function(e) {
+    if (!noDouble(e)) return;
+    var el = document.getElementById('soundStatus');
+    var ctx = getCtx();
+    if (!ctx) {
+      el.textContent = '❌ Audio not supported on this browser';
+      el.style.color = '#ff4444';
+      return;
+    }
+    el.textContent = '⏳ Playing test sound...';
+    el.style.color = '#ffcc00';
+    // Play a loud obvious test tone
+    var osc = ctx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.5, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
+    // Also play crash
+    playDrum(0);
+    setTimeout(function() { playDrum(4); }, 200);
+    setTimeout(function() { playDrum(6); }, 400);
+    setTimeout(function() {
+      el.textContent = 'Did you hear 3 sounds? If not: mute switch OFF + volume UP';
+      el.style.color = '#00d4ff';
+    }, 800);
+  };
 
   window.pickSong = function(e, idx) {
     if (!noDouble(e)) return;

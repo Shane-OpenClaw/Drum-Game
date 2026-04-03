@@ -176,12 +176,10 @@
   <div id="soundStatus" style="font-size:2.5vw;color:#00ff88;margin-top:6px;min-height:1.5em;"></div>
   <div class="instructions">
     <strong>HOW TO PLAY:</strong><br>
-    1. Turn OFF your <strong style="color:#ffcc00">silent/mute switch</strong> (left side of iPhone!)<br>
-    2. Turn <strong style="color:#ffcc00">volume up</strong><br>
-    3. Hit SOUND CHECK to test<br>
-    4. Pick a song & hit GO<br>
-    5. Press ▶ on the Apple Music player<br>
-    6. TAP THE DRUMS - you're Travis Barker! 🤘
+    1. Pick a song & hit LET'S GO<br>
+    2. Tap <strong style="color:#ffcc00">OPEN IN APPLE MUSIC</strong> to start the song<br>
+    3. Switch back to Safari<br>
+    4. TAP THE DRUMS - you're Travis Barker! 🤘
   </div>
 </div>
 
@@ -332,14 +330,17 @@
     playDrum(0);
     var song = songs[curSong];
 
-    // Embed Apple Music player
+    // Open song in Apple Music app link
+    var appleLink = 'https://music.apple.com/us/song/' + song.embedId;
     document.getElementById('applePlayer').innerHTML =
-      '<iframe allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" ' +
-      'sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" ' +
-      'src="https://embed.music.apple.com/us/song/' + song.embedId + '?theme=dark" ' +
-      'style="width:100%;max-width:400px;height:52px;border:0;border-radius:8px;overflow:hidden;background:transparent;"></iframe>';
+      '<a href="' + appleLink + '" target="_blank" ' +
+      'style="display:block;background:#ff1493;color:#000;font-family:Permanent Marker,cursive;' +
+      'font-size:4vw;padding:12px 20px;text-decoration:none;text-align:center;' +
+      'box-shadow:3px 3px 0 #fff;margin:4px 0;">' +
+      '▶ OPEN IN APPLE MUSIC</a>';
 
-    document.getElementById('nowPlaying').textContent = '▶ ' + song.name + ' — HIT PLAY & DRUM ALONG!';
+    document.getElementById('nowPlaying').textContent =
+      '1. Tap button above to play song  2. Come back here & drum!';
     document.getElementById('menu').style.display = 'none';
     document.getElementById('playScreen').style.display = 'flex';
   };

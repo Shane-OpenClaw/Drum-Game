@@ -13,36 +13,39 @@
     -webkit-touch-callout: none;
   }
 
-  /* MENU */
   #menu {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    position: fixed; top:0; left:0; right:0; bottom:0;
     background: #0a0a0a; display: flex; flex-direction: column;
     align-items: center; justify-content: center; z-index: 100;
-    text-align: center; padding: 20px;
+    text-align: center; padding: 15px; overflow-y: auto;
   }
   #menu h1 {
     font-size: 7vw; color: #ff1493;
     text-shadow: 0 0 20px #ff1493, 0 0 40px #ff1493;
     margin-bottom: 5px; letter-spacing: 3px;
   }
-  #menu .sub { font-size: 3vw; color: #00d4ff; margin-bottom: 8px; }
-  #menu .ded { font-size: 3.5vw; color: #ffcc00; margin-bottom: 15px; }
-  .song-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; width: 80%; max-width: 350px; }
+  #menu .sub { font-size: 3vw; color: #00d4ff; margin-bottom: 6px; }
+  #menu .ded { font-size: 3.5vw; color: #ffcc00; margin-bottom: 12px; }
+  .song-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; width: 85%; max-width: 350px; }
   .song-item {
     background: none; border: 1px solid #00d4ff; color: #00d4ff;
-    font-family: 'Courier New', monospace; font-size: 3.2vw;
-    padding: 10px 16px; -webkit-appearance: none; border-radius: 0; cursor: pointer;
+    font-family: 'Courier New', monospace; font-size: 3vw;
+    padding: 8px 14px; -webkit-appearance: none; border-radius: 0; cursor: pointer;
     text-align: left;
   }
   .song-item:active, .song-item.sel { background: #00d4ff; color: #000; }
   .go-btn {
     background: none; border: 2px solid #ff1493; color: #ff1493;
     font-family: 'Courier New', monospace; font-size: 5vw;
-    padding: 12px 36px; letter-spacing: 3px; -webkit-appearance: none;
-    border-radius: 0; cursor: pointer;
+    padding: 10px 32px; letter-spacing: 3px; -webkit-appearance: none;
+    border-radius: 0; cursor: pointer; margin-bottom: 8px;
   }
   .go-btn:active { background: #ff1493; color: #000; }
-  .hint { font-size: 2.5vw; color: #555; margin-top: 12px; }
+  .instructions {
+    font-size: 2.5vw; color: #888; max-width: 320px; line-height: 1.5;
+    margin-top: 8px;
+  }
+  .instructions strong { color: #ff1493; }
 
   /* PLAY SCREEN */
   #playScreen {
@@ -50,35 +53,41 @@
     flex-direction: column; background: #0a0a0a;
   }
 
-  /* Top: lyrics */
+  /* Lyrics bar */
   #lyricsBar {
-    height: 22vh; overflow: hidden; position: relative;
+    height: 18vh; min-height: 80px; overflow: hidden; position: relative;
     background: linear-gradient(to bottom, #111, #0a0a0a);
     border-bottom: 1px solid #222;
     display: flex; flex-direction: column; justify-content: center;
-    padding: 10px 15px;
+    padding: 8px 50px 8px 12px;
   }
   #songName {
-    font-size: 3vw; color: #ff1493; margin-bottom: 6px;
+    font-size: 2.5vw; color: #ff1493; margin-bottom: 4px;
     text-shadow: 0 0 10px #ff1493;
   }
   #lyricLine {
-    font-size: 4.5vw; color: #fff; min-height: 2.2em;
-    line-height: 1.4; transition: opacity 0.3s;
+    font-size: 4vw; color: #fff; min-height: 1.8em;
+    line-height: 1.3; transition: opacity 0.3s;
   }
-  #lyricNext {
-    font-size: 3vw; color: #555; min-height: 1.5em; margin-top: 4px;
+  #lyricNext { font-size: 2.5vw; color: #555; min-height: 1.2em; margin-top: 2px; }
+  #topBtns {
+    position: absolute; top: 6px; right: 8px;
+    display: flex; gap: 6px;
   }
-  #backBtn {
-    position: absolute; top: 8px; right: 12px;
+  .top-btn {
     background: none; border: 1px solid #555; color: #555;
-    font-family: 'Courier New', monospace; font-size: 2.5vw;
-    padding: 4px 10px; -webkit-appearance: none; border-radius: 0; cursor: pointer;
+    font-family: 'Courier New', monospace; font-size: 2.2vw;
+    padding: 3px 8px; -webkit-appearance: none; border-radius: 0; cursor: pointer;
+  }
+  .top-btn:active { background: #555; color: #000; }
+  #musicStatus {
+    position: absolute; bottom: 4px; right: 8px;
+    font-size: 2vw; color: #00ff88;
   }
 
-  /* Drum kit area */
+  /* Drum kit */
   #drumKit {
-    flex: 1; display: grid; padding: 8px; gap: 6px;
+    flex: 1; display: grid; padding: 6px; gap: 5px;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
     grid-template-areas:
@@ -86,37 +95,32 @@
       "tom1  snare tom2"
       "kick  kick  kick";
   }
-
   .drum {
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    flex-direction: column; cursor: pointer;
-    position: relative; overflow: hidden;
+    flex-direction: column; cursor: pointer; position: relative; overflow: hidden;
     transition: transform 0.05s;
     border: 3px solid rgba(255,255,255,0.2);
   }
-  .drum:active, .drum.hit { transform: scale(0.92); }
+  .drum:active, .drum.hit { transform: scale(0.9); }
   .drum .name {
     font-size: 3.5vw; font-weight: bold; letter-spacing: 1px;
-    text-shadow: 0 0 10px currentColor;
-    pointer-events: none; z-index: 2;
+    text-shadow: 0 0 10px currentColor; pointer-events: none; z-index: 2;
   }
-  .drum .sub-name {
-    font-size: 2vw; opacity: 0.6; pointer-events: none; z-index: 2;
-  }
+  .drum .sub-name { font-size: 2vw; opacity: 0.5; pointer-events: none; z-index: 2; }
   .drum .flash {
     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
-    opacity: 0; transition: opacity 0.1s; pointer-events: none;
+    background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 70%);
+    opacity: 0; transition: opacity 0.08s; pointer-events: none;
   }
   .drum.hit .flash { opacity: 1; }
 
-  #crash  { grid-area: crash;  background: radial-gradient(circle, #4a3500 0%, #1a1200 100%); color: #ffcc00; border-color: #ffcc0044; }
-  #ride   { grid-area: ride;   background: radial-gradient(circle, #3a3a15 0%, #151508 100%); color: #cccc44; border-color: #cccc4444; }
-  #hihat  { grid-area: hihat;  background: radial-gradient(circle, #003344 0%, #001118 100%); color: #00d4ff; border-color: #00d4ff44; }
-  #tom1   { grid-area: tom1;   background: radial-gradient(circle, #1a0033 0%, #0a0015 100%); color: #aa44ff; border-color: #aa44ff44; }
-  #snare  { grid-area: snare;  background: radial-gradient(circle, #440020 0%, #1a000a 100%); color: #ff1493; border-color: #ff149344; }
-  #tom2   { grid-area: tom2;   background: radial-gradient(circle, #002a00 0%, #000f00 100%); color: #00ff88; border-color: #00ff8844; }
-  #kick   { grid-area: kick;   background: radial-gradient(circle, #1a1a1a 0%, #080808 100%); color: #ffffff; border-color: #ffffff22; border-radius: 20px; }
+  #crash { grid-area: crash; background: radial-gradient(circle, #4a3500, #1a1200); color: #ffcc00; border-color: #ffcc0044; }
+  #ride  { grid-area: ride;  background: radial-gradient(circle, #3a3a15, #151508); color: #cccc44; border-color: #cccc4444; }
+  #hihat { grid-area: hihat; background: radial-gradient(circle, #003344, #001118); color: #00d4ff; border-color: #00d4ff44; }
+  #tom1  { grid-area: tom1;  background: radial-gradient(circle, #1a0033, #0a0015); color: #aa44ff; border-color: #aa44ff44; }
+  #snare { grid-area: snare; background: radial-gradient(circle, #440020, #1a000a); color: #ff1493; border-color: #ff149344; }
+  #tom2  { grid-area: tom2;  background: radial-gradient(circle, #002a00, #000f00); color: #00ff88; border-color: #00ff8844; }
+  #kick  { grid-area: kick;  background: radial-gradient(circle, #1a1a1a, #080808); color: #fff; border-color: #ffffff22; border-radius: 20px; }
 </style>
 </head>
 <body>
@@ -126,31 +130,41 @@
   <div class="sub">A BLINK-182 DRUMMING GAME</div>
   <div class="ded">YO CAMERON - CAN YOU KEEP UP?</div>
   <div class="song-list">
-    <button class="song-item sel" data-s="0" ontouchstart="pickSong(event,0)" onclick="pickSong(event,0)">ALL THE SMALL THINGS</button>
-    <button class="song-item" data-s="1" ontouchstart="pickSong(event,1)" onclick="pickSong(event,1)">WHAT'S MY AGE AGAIN?</button>
-    <button class="song-item" data-s="2" ontouchstart="pickSong(event,2)" onclick="pickSong(event,2)">DAMMIT</button>
-    <button class="song-item" data-s="3" ontouchstart="pickSong(event,3)" onclick="pickSong(event,3)">FEELING THIS</button>
-    <button class="song-item" data-s="4" ontouchstart="pickSong(event,4)" onclick="pickSong(event,4)">ONE MORE TIME</button>
+    <button class="song-item sel" ontouchstart="pickSong(event,0)" onclick="pickSong(event,0)">ALL THE SMALL THINGS</button>
+    <button class="song-item" ontouchstart="pickSong(event,1)" onclick="pickSong(event,1)">WHAT'S MY AGE AGAIN?</button>
+    <button class="song-item" ontouchstart="pickSong(event,2)" onclick="pickSong(event,2)">DAMMIT</button>
+    <button class="song-item" ontouchstart="pickSong(event,3)" onclick="pickSong(event,3)">FEELING THIS</button>
+    <button class="song-item" ontouchstart="pickSong(event,4)" onclick="pickSong(event,4)">ONE MORE TIME</button>
   </div>
   <button class="go-btn" ontouchstart="startJam(event)" onclick="startJam(event)">JAM</button>
-  <div class="hint">TAP THE DRUMS AND PLAY ALONG</div>
+  <div class="instructions">
+    <strong>HOW TO PLAY:</strong><br>
+    1. Pick a song above<br>
+    2. Hit JAM - a backing track will play<br>
+    3. Tap the drums to play along!<br>
+    4. YOU are Travis Barker - bring the drums!
+  </div>
 </div>
 
 <div id="playScreen">
   <div id="lyricsBar">
-    <button id="backBtn" ontouchstart="goBack(event)" onclick="goBack(event)">BACK</button>
+    <div id="topBtns">
+      <button class="top-btn" id="restartBtn" ontouchstart="restartSong(event)" onclick="restartSong(event)">RESTART</button>
+      <button class="top-btn" ontouchstart="goBack(event)" onclick="goBack(event)">BACK</button>
+    </div>
     <div id="songName"></div>
     <div id="lyricLine"></div>
     <div id="lyricNext"></div>
+    <div id="musicStatus"></div>
   </div>
   <div id="drumKit">
-    <div class="drum" id="crash"  data-d="0"><div class="flash"></div><div class="name">CRASH</div></div>
-    <div class="drum" id="ride"   data-d="1"><div class="flash"></div><div class="name">RIDE</div></div>
-    <div class="drum" id="hihat"  data-d="2"><div class="flash"></div><div class="name">HI-HAT</div></div>
-    <div class="drum" id="tom1"   data-d="3"><div class="flash"></div><div class="name">TOM 1</div><div class="sub-name">HIGH</div></div>
-    <div class="drum" id="snare"  data-d="4"><div class="flash"></div><div class="name">SNARE</div></div>
-    <div class="drum" id="tom2"   data-d="5"><div class="flash"></div><div class="name">TOM 2</div><div class="sub-name">LOW</div></div>
-    <div class="drum" id="kick"   data-d="6"><div class="flash"></div><div class="name">KICK</div></div>
+    <div class="drum" id="crash" data-d="0"><div class="flash"></div><div class="name">CRASH</div></div>
+    <div class="drum" id="ride"  data-d="1"><div class="flash"></div><div class="name">RIDE</div></div>
+    <div class="drum" id="hihat" data-d="2"><div class="flash"></div><div class="name">HI-HAT</div></div>
+    <div class="drum" id="tom1"  data-d="3"><div class="flash"></div><div class="name">TOM 1</div><div class="sub-name">HIGH</div></div>
+    <div class="drum" id="snare" data-d="4"><div class="flash"></div><div class="name">SNARE</div></div>
+    <div class="drum" id="tom2"  data-d="5"><div class="flash"></div><div class="name">TOM 2</div><div class="sub-name">LOW</div></div>
+    <div class="drum" id="kick"  data-d="6"><div class="flash"></div><div class="name">KICK</div></div>
   </div>
 </div>
 
@@ -163,202 +177,360 @@
     return true;
   }
 
-  // ---- AUDIO: generate WAV data URIs ----
-  var sr = 22050;
+  // ==== AUDIO ENGINE ====
+  var actx = null;
 
-  function toWav(samples) {
-    var n = samples.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
-    function ws(o, s) { for (var i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
-    ws(0,'RIFF'); v.setUint32(4, 36 + n * 2, true); ws(8,'WAVE'); ws(12,'fmt ');
-    v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-    v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
-    v.setUint16(32, 2, true); v.setUint16(34, 16, true);
-    ws(36,'data'); v.setUint32(40, n * 2, true);
-    for (var i = 0; i < n; i++) { var s = Math.max(-1, Math.min(1, samples[i])); v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true); }
-    var bytes = new Uint8Array(buf), bin = '';
-    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-    return 'data:audio/wav;base64,' + btoa(bin);
-  }
-
-  // 7 drum sounds
-  function makeCrash() {
-    var len = sr * 0.5, out = new Float32Array(len);
-    for (var i = 0; i < len; i++) out[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/len, 1.2) * 0.6;
-    return out;
-  }
-  function makeRide() {
-    var len = sr * 0.3, out = new Float32Array(len);
-    for (var i = 0; i < len; i++) out[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/len, 2.5) * 0.4;
-    return out;
-  }
-  function makeHihat() {
-    var len = sr * 0.06, out = new Float32Array(len);
-    for (var i = 0; i < len; i++) out[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/len, 5) * 0.5;
-    return out;
-  }
-  function makeTomHi() {
-    var len = sr * 0.2, out = new Float32Array(len);
-    for (var i = 0; i < len; i++) { var e = Math.pow(1 - i/len, 2); out[i] = Math.sin(2*Math.PI*(180 - 80*i/len)*i/sr) * e * 0.7; }
-    return out;
-  }
-  function makeSnare() {
-    var len = sr * 0.15, out = new Float32Array(len);
-    for (var i = 0; i < len; i++) {
-      var e = Math.pow(1 - i/len, 3);
-      out[i] = ((Math.random() * 2 - 1) * 0.6 + Math.sin(2*Math.PI*180*i/sr) * 0.4) * e * 0.8;
+  function getCtx() {
+    if (!actx) {
+      try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
     }
-    return out;
-  }
-  function makeTomLo() {
-    var len = sr * 0.25, out = new Float32Array(len);
-    for (var i = 0; i < len; i++) { var e = Math.pow(1 - i/len, 2); out[i] = Math.sin(2*Math.PI*(110 - 60*i/len)*i/sr) * e * 0.7; }
-    return out;
-  }
-  function makeKick() {
-    var len = sr * 0.25, out = new Float32Array(len);
-    for (var i = 0; i < len; i++) {
-      var e = Math.pow(1 - i/len, 2);
-      out[i] = Math.sin(2*Math.PI*(160 - 120*i/len)*i/sr) * e * 0.9;
-    }
-    return out;
+    if (actx && actx.state === 'suspended') actx.resume();
+    return actx;
   }
 
-  var makers = [makeCrash, makeRide, makeHihat, makeTomHi, makeSnare, makeTomLo, makeKick];
-  var wavs = [];
-  for (var i = 0; i < makers.length; i++) wavs.push(toWav(makers[i]()));
-
-  // Audio pools
-  var pools = [], pIdx = [];
-  for (var d = 0; d < 7; d++) {
-    pools[d] = []; pIdx[d] = 0;
-    for (var p = 0; p < 4; p++) {
-      var a = new Audio(wavs[d]);
-      a.preload = 'auto';
-      pools[d].push(a);
-    }
-  }
-
+  // Drum sounds via Web Audio (created fresh each hit for iOS compat)
   function playDrum(type) {
-    try {
-      var a = pools[type][pIdx[type]];
-      a.currentTime = 0;
-      a.play();
-      pIdx[type] = (pIdx[type] + 1) % 4;
-    } catch(e) {}
+    var ctx = getCtx();
+    if (!ctx) return;
+    var now = ctx.currentTime;
+    var g, osc, noise, buf, data, f;
+
+    if (type === 0) { // crash
+      noise = ctx.createBufferSource();
+      buf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate); data = buf.getChannelData(0);
+      for (var i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * Math.pow(1-i/data.length, 1.2) * 0.5;
+      noise.buffer = buf; g = ctx.createGain(); g.gain.setValueAtTime(0.6, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.5);
+      noise.connect(g); g.connect(ctx.destination); noise.start(now);
+    } else if (type === 1) { // ride
+      noise = ctx.createBufferSource();
+      buf = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate); data = buf.getChannelData(0);
+      for (var i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * Math.pow(1-i/data.length, 3) * 0.35;
+      noise.buffer = buf; g = ctx.createGain(); g.gain.setValueAtTime(0.4, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.2);
+      f = ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=4000;
+      noise.connect(f); f.connect(g); g.connect(ctx.destination); noise.start(now);
+    } else if (type === 2) { // hihat
+      noise = ctx.createBufferSource();
+      buf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate); data = buf.getChannelData(0);
+      for (var i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * Math.pow(1-i/data.length, 6) * 0.5;
+      noise.buffer = buf; g = ctx.createGain(); g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.05);
+      f = ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=6000;
+      noise.connect(f); f.connect(g); g.connect(ctx.destination); noise.start(now);
+    } else if (type === 3) { // tom hi
+      osc = ctx.createOscillator(); osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(80, now+0.15);
+      g = ctx.createGain(); g.gain.setValueAtTime(0.6, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.15);
+      osc.connect(g); g.connect(ctx.destination); osc.start(now); osc.stop(now+0.15);
+    } else if (type === 4) { // snare
+      noise = ctx.createBufferSource();
+      buf = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate); data = buf.getChannelData(0);
+      for (var i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * Math.pow(1-i/data.length, 3) * 0.7;
+      noise.buffer = buf; g = ctx.createGain(); g.gain.setValueAtTime(0.8, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.12);
+      f = ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=1500;
+      noise.connect(f); f.connect(g); g.connect(ctx.destination); noise.start(now);
+      // body
+      osc = ctx.createOscillator(); osc.frequency.setValueAtTime(180, now); osc.frequency.exponentialRampToValueAtTime(60, now+0.06);
+      var g2 = ctx.createGain(); g2.gain.setValueAtTime(0.4, now); g2.gain.exponentialRampToValueAtTime(0.001, now+0.06);
+      osc.connect(g2); g2.connect(ctx.destination); osc.start(now); osc.stop(now+0.06);
+    } else if (type === 5) { // tom lo
+      osc = ctx.createOscillator(); osc.frequency.setValueAtTime(120, now); osc.frequency.exponentialRampToValueAtTime(50, now+0.2);
+      g = ctx.createGain(); g.gain.setValueAtTime(0.6, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.2);
+      osc.connect(g); g.connect(ctx.destination); osc.start(now); osc.stop(now+0.2);
+    } else { // kick
+      osc = ctx.createOscillator(); osc.frequency.setValueAtTime(160, now); osc.frequency.exponentialRampToValueAtTime(30, now+0.15);
+      g = ctx.createGain(); g.gain.setValueAtTime(1.0, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.2);
+      osc.connect(g); g.connect(ctx.destination); osc.start(now); osc.stop(now+0.2);
+      // click
+      noise = ctx.createBufferSource();
+      buf = ctx.createBuffer(1, ctx.sampleRate * 0.02, ctx.sampleRate); data = buf.getChannelData(0);
+      for (var i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * Math.pow(1-i/data.length, 10) * 0.3;
+      noise.buffer = buf; var g3 = ctx.createGain(); g3.gain.setValueAtTime(0.3, now); g3.gain.exponentialRampToValueAtTime(0.001, now+0.02);
+      noise.connect(g3); g3.connect(ctx.destination); noise.start(now);
+    }
   }
 
-  // ---- LYRICS ----
+  // ==== BACKING TRACK ENGINE ====
+  // Plays bass + guitar chords following real chord progressions (no drums - that's YOU)
+  var backingNodes = [];
+  var backingTimer = null;
+
+  function stopBacking() {
+    for (var i = 0; i < backingNodes.length; i++) {
+      try { backingNodes[i].stop(); } catch(e) {}
+      try { backingNodes[i].disconnect(); } catch(e) {}
+    }
+    backingNodes = [];
+    if (backingTimer) { clearInterval(backingTimer); backingTimer = null; }
+  }
+
+  // Note frequencies
+  var noteFreq = {
+    'C2':65.41,'D2':73.42,'E2':82.41,'F2':87.31,'G2':98.00,'A2':110,'B2':123.47,
+    'C3':130.81,'D3':146.83,'E3':164.81,'F3':174.61,'G3':196.00,'A3':220,'B3':246.94,
+    'C4':261.63,'D4':293.66,'E4':329.63,'F4':349.23,'G4':392.00,'A4':440,'B4':493.88,
+    'C5':523.25,'D5':587.33,'E5':659.25,'F5':698.46,'G5':783.99,
+    'Db3':138.59,'Eb3':155.56,'Gb3':185.00,'Ab3':207.65,'Bb3':233.08,
+    'Db4':277.18,'Eb4':311.13,'Gb4':369.99,'Ab4':415.30,'Bb4':466.16,
+    'Db2':69.30,'Eb2':77.78,'Gb2':92.50,'Ab2':103.83,'Bb2':116.54
+  };
+
+  function playNote(ctx, freq, startTime, duration, vol, type) {
+    var osc = ctx.createOscillator();
+    osc.type = type || 'sawtooth';
+    osc.frequency.setValueAtTime(freq, startTime);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(vol, startTime);
+    g.gain.setValueAtTime(vol, startTime + duration * 0.8);
+    g.gain.linearRampToValueAtTime(0, startTime + duration);
+    var filt = ctx.createBiquadFilter();
+    filt.type = 'lowpass';
+    filt.frequency.setValueAtTime(800, startTime);
+    osc.connect(filt); filt.connect(g); g.connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.01);
+    backingNodes.push(osc);
+    return osc;
+  }
+
+  function playChord(ctx, freqs, startTime, duration, vol) {
+    for (var i = 0; i < freqs.length; i++) {
+      var osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freqs[i], startTime);
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(vol * 0.25, startTime);
+      g.gain.linearRampToValueAtTime(0, startTime + duration);
+      // Distortion-like: use waveshaper
+      var ws = ctx.createWaveShaper();
+      var curve = new Float32Array(256);
+      for (var j = 0; j < 256; j++) { var x = (j / 128) - 1; curve[j] = (Math.PI + 3) * x / (Math.PI + 3 * Math.abs(x)); }
+      ws.curve = curve;
+      var filt = ctx.createBiquadFilter();
+      filt.type = 'lowpass'; filt.frequency.setValueAtTime(2000, startTime);
+      osc.connect(ws); ws.connect(filt); filt.connect(g); g.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.01);
+      backingNodes.push(osc);
+    }
+  }
+
+  // Song backing data: chord progressions + bass lines
+  var songBacking = [
+    { // All The Small Things - C G F G
+      bpm: 148, measures: [
+        // Each entry: [chordRoot, bassNote, chordNotes[]]
+        {b:'C3', ch:['C4','E4','G4']},
+        {b:'G2', ch:['G3','B3','D4']},
+        {b:'F2', ch:['F3','A3','C4']},
+        {b:'G2', ch:['G3','B3','D4']}
+      ]
+    },
+    { // What's My Age Again - F# D A E
+      bpm: 160, measures: [
+        {b:'Gb2', ch:['Gb3','Bb3','Db4']},
+        {b:'D2',  ch:['D3','Gb3','A3']},
+        {b:'A2',  ch:['A3','Db4','E4']},
+        {b:'E2',  ch:['E3','Ab3','B3']}
+      ]
+    },
+    { // Dammit - C G A F
+      bpm: 215, measures: [
+        {b:'C3', ch:['C4','E4','G4']},
+        {b:'G2', ch:['G3','B3','D4']},
+        {b:'A2', ch:['A3','Db4','E4']},
+        {b:'F2', ch:['F3','A3','C4']}
+      ]
+    },
+    { // Feeling This - A D A E
+      bpm: 170, measures: [
+        {b:'A2', ch:['A3','Db4','E4']},
+        {b:'D2', ch:['D3','Gb3','A3']},
+        {b:'A2', ch:['A3','Db4','E4']},
+        {b:'E2', ch:['E3','Ab3','B3']}
+      ]
+    },
+    { // One More Time - G D Em C
+      bpm: 138, measures: [
+        {b:'G2', ch:['G3','B3','D4']},
+        {b:'D2', ch:['D3','Gb3','A3']},
+        {b:'E2', ch:['E3','G3','B3']},
+        {b:'C3', ch:['C4','E4','G4']}
+      ]
+    }
+  ];
+
+  function startBacking(songIdx) {
+    stopBacking();
+    var ctx = getCtx();
+    if (!ctx) return;
+
+    var song = songBacking[songIdx];
+    var bpm = song.bpm;
+    var beatDur = 60 / bpm;
+    var measureDur = beatDur * 4;
+    var now = ctx.currentTime + 0.1;
+
+    // Schedule ~90 seconds of backing track
+    var totalMeasures = Math.ceil(90 / measureDur);
+    for (var m = 0; m < totalMeasures; m++) {
+      var pattern = song.measures[m % song.measures.length];
+      var mStart = now + m * measureDur;
+
+      // Bass: play root on beats 1 and 3 (8th note punk style)
+      var bassFreq = noteFreq[pattern.b] || 100;
+      for (var b = 0; b < 4; b++) {
+        playNote(ctx, bassFreq, mStart + b * beatDur, beatDur * 0.8, 0.18, 'sawtooth');
+        // 8th note between beats for punk energy
+        playNote(ctx, bassFreq, mStart + b * beatDur + beatDur * 0.5, beatDur * 0.3, 0.10, 'sawtooth');
+      }
+
+      // Guitar chords: strum on each beat
+      var chFreqs = [];
+      for (var c = 0; c < pattern.ch.length; c++) {
+        chFreqs.push(noteFreq[pattern.ch[c]] || 300);
+      }
+      for (var b = 0; b < 4; b++) {
+        playChord(ctx, chFreqs, mStart + b * beatDur, beatDur * 0.9, 0.12);
+      }
+      // Upstroke 8ths for punk feel
+      for (var b = 0; b < 4; b++) {
+        playChord(ctx, chFreqs, mStart + b * beatDur + beatDur * 0.5, beatDur * 0.3, 0.06);
+      }
+    }
+  }
+
+  // ==== SONG DATA (lyrics) ====
   var songs = [
-    { name: "ALL THE SMALL THINGS", bpm: 148, lyrics: [
-      [0, "All the small things"],
-      [3000, "True care, truth brings"],
-      [6000, "I'll take one lift"],
-      [9000, "Your ride, best trip"],
-      [12000, "Always, I know"],
-      [15000, "You'll be at my show"],
+    { name: "ALL THE SMALL THINGS", lyrics: [
+      [0, "🎸 Intro..."],
+      [3000, "All the small things"],
+      [5500, "True care, truth brings"],
+      [8000, "I'll take one lift"],
+      [10500, "Your ride, best trip"],
+      [13000, "Always, I know"],
+      [15500, "You'll be at my show"],
       [18000, "Watching, waiting"],
-      [21000, "Commiserating"],
-      [24000, "Say it ain't so, I will not go"],
-      [28000, "Turn the lights off, carry me home"],
-      [32000, "Na-na, na-na, na-na, na-na, na-na"],
-      [36000, "Na-na, na-na, na-na, na-na, na-na"],
-      [40000, "Na-na, na-na, na-na, na-na, na-na"],
-      [44000, "Na-na, na-na, na-na, na-na, na-na"],
-      [48000, "Late night, come home"],
-      [51000, "Work sucks, I know"],
-      [54000, "She left me roses by the stairs"],
-      [58000, "Surprises let me know she cares"],
-      [62000, "Say it ain't so, I will not go"],
-      [66000, "Turn the lights off, carry me home"],
-      [70000, "Na-na, na-na, na-na, na-na, na-na"],
-      [74000, "Na-na, na-na, na-na, na-na, na-na"],
-      [78000, "Say it ain't so, I will not go"],
-      [82000, "Turn the lights off, carry me home"],
-      [86000, "Keep your head still, I'll be your thrill"],
-      [90000, "The night will go on, my little windmill"],
-      [94000, ""]
+      [20500, "Commiserating"],
+      [23000, "Say it ain't so"],
+      [25000, "I will not go"],
+      [27000, "Turn the lights off"],
+      [29000, "Carry me home"],
+      [31000, "Na na na na na na na na na na"],
+      [35000, "Na na na na na na na na na na"],
+      [39000, "Late night, come home"],
+      [41500, "Work sucks, I know"],
+      [44000, "She left me roses by the stairs"],
+      [47000, "Surprises let me know she cares"],
+      [50000, "Say it ain't so"],
+      [52000, "I will not go"],
+      [54000, "Turn the lights off"],
+      [56000, "Carry me home"],
+      [58000, "Na na na na na na na na na na"],
+      [62000, "Na na na na na na na na na na"],
+      [66000, "Keep your head still"],
+      [68000, "I'll be your thrill"],
+      [70000, "The night will go on"],
+      [72500, "My little windmill"],
+      [75000, "🔁 Looping..."],
     ]},
-    { name: "WHAT'S MY AGE AGAIN?", bpm: 160, lyrics: [
-      [0, "I took her out, it was a Friday night"],
-      [4000, "I wore cologne to get the feeling right"],
-      [8000, "We started making out and she took off my pants"],
-      [12000, "But then I turned on the TV"],
-      [15000, "And that's about the time she walked away from me"],
-      [19000, "Nobody likes you when you're twenty-three"],
-      [23000, "And are still more amused by TV shows"],
-      [27000, "What the hell is ADD?"],
-      [30000, "My friends say I should act my age"],
-      [34000, "What's my age again?"],
-      [37000, "What's my age again?"],
-      [40000, "Then later on, on the drive home"],
-      [44000, "I called her mom from a pay phone"],
-      [48000, "I said I was the cops"],
-      [51000, "And your husband's in jail"],
+    { name: "WHAT'S MY AGE AGAIN?", lyrics: [
+      [0, "🎸 Intro..."],
+      [3000, "I took her out"],
+      [4500, "It was a Friday night"],
+      [6500, "I wore cologne"],
+      [8000, "To get the feeling right"],
+      [10500, "We started making out"],
+      [12500, "And she took off my pants"],
+      [15000, "But then I turned on the TV"],
+      [18000, "And that's about the time"],
+      [20000, "She walked away from me"],
+      [22500, "Nobody likes you"],
+      [24000, "When you're twenty-three"],
+      [26500, "And are still more amused"],
+      [28500, "By TV shows"],
+      [30500, "What the hell is ADD?"],
+      [33000, "My friends say I should act my age"],
+      [36000, "What's my age again?"],
+      [39000, "What's my age again?"],
+      [42000, "Then later on"],
+      [43500, "On the drive home"],
+      [45500, "I called her mom"],
+      [47000, "From a pay phone"],
+      [49000, "I said I was the cops"],
+      [51500, "And your husband's in jail"],
       [54000, "This state looks down on sodomy"],
-      [58000, "And that's about the time that bitch hung up on me"],
-      [62000, "Nobody likes you when you're twenty-three"],
-      [66000, "And are still more amused by prank phone calls"],
-      [70000, "What the hell is caller ID?"],
-      [74000, "My friends say I should act my age"],
-      [78000, "What's my age again?"],
-      [81000, "What's my age again?"],
-      [84000, ""]
+      [57000, "And that's about the time"],
+      [59000, "That bitch hung up on me"],
+      [61500, "Nobody likes you"],
+      [63000, "When you're twenty-three"],
+      [65500, "What's my age again?"],
+      [68000, "🔁 Looping..."],
     ]},
-    { name: "DAMMIT", bpm: 215, lyrics: [
-      [0, "It's alright to tell me what you think about me"],
-      [4000, "I won't try to argue or hold it against you"],
-      [8000, "I know that you're leaving, you must have your reasons"],
-      [12000, "The season is calling, your pictures are falling down"],
-      [16000, "The steps that I retrace, the sad look on your face"],
-      [20000, "The timing and structure, did you hear he fucked her?"],
-      [24000, "Well I'll be damned"],
-      [27000, "Well I'll be damned"],
-      [30000, "And I guess this is growing up"],
-      [34000, "And I guess this is growing up"],
-      [38000, "And I guess this is growing up"],
-      [42000, "Well I guess this is growing up"],
-      [46000, "And I guess this is growing up"],
-      [50000, "And I guess this is growing up"],
-      [54000, ""]
+    { name: "DAMMIT", lyrics: [
+      [0, "🎸 Intro..."],
+      [2000, "It's alright to tell me"],
+      [3500, "What you think about me"],
+      [5000, "I won't try to argue"],
+      [6500, "Or hold it against you"],
+      [8000, "I know that you're leaving"],
+      [9500, "You must have your reasons"],
+      [11000, "The season is calling"],
+      [12500, "Your pictures are falling down"],
+      [14500, "The steps that I retrace"],
+      [16000, "The sad look on your face"],
+      [17500, "The timing and structure"],
+      [19000, "Did you hear he f***ed her?"],
+      [21000, "Well I'll be damned"],
+      [23500, "Well I'll be damned"],
+      [26000, "And I guess this is growing up"],
+      [29000, "And I guess this is growing up"],
+      [32000, "And I guess this is growing up"],
+      [35000, "🔁 Looping..."],
     ]},
-    { name: "FEELING THIS", bpm: 170, lyrics: [
-      [0, "I got no regret right now, I'm feeling this"],
-      [4000, "The air is so cold and low, I'm feeling this"],
-      [8000, "Let me go in her room, I'm feeling this"],
-      [12000, "I wanna take off her clothes"],
-      [15000, "Show me the way to bed"],
-      [18000, "Show me the way you move"],
-      [21000, "Fastest thing that's on my mind"],
-      [24000, "Fate fell short this time"],
-      [27000, "Your smile fades in the summer"],
+    { name: "FEELING THIS", lyrics: [
+      [0, "🥁 Intro drum fill..."],
+      [3000, "I got no regret right now"],
+      [5000, "I'm feeling this"],
+      [7000, "The air is so cold and low"],
+      [9000, "I'm feeling this"],
+      [11000, "Let me go in her room"],
+      [13000, "I'm feeling this"],
+      [15000, "I wanna take off her clothes"],
+      [17500, "Show me the way to bed"],
+      [19500, "Show me the way you move"],
+      [22000, "Fastest thing on my mind"],
+      [25000, "Fate fell short this time"],
+      [27500, "Your smile fades in the summer"],
       [30000, "Place your hand in mine"],
-      [33000, "I'll leave when I wanna"],
-      [36000, "Where do we go from here?"],
-      [39000, "Turn all the lights down now"],
-      [42000, "Smiling from ear to ear"],
-      [45000, "Are you feeling this?"],
-      [48000, "Fate fell short this time"],
-      [51000, "Your smile fades in the summer"],
-      [54000, "Place your hand in mine"],
-      [57000, "I'll leave when I wanna"],
-      [60000, ""]
+      [32500, "I'll leave when I wanna"],
+      [35000, "Where do we go from here?"],
+      [37500, "Turn all the lights down now"],
+      [40000, "Smiling from ear to ear"],
+      [42500, "Are you feeling this?"],
+      [45000, "🔁 Looping..."],
     ]},
-    { name: "ONE MORE TIME", bpm: 138, lyrics: [
-      [0, "I know there's somewhere out there for us"],
-      [5000, "We've been through way too much to give up"],
-      [10000, "Maybe we're damaged, maybe we're not"],
-      [15000, "But I know I still believe in us"],
-      [20000, "One more time, say you'll be mine"],
-      [25000, "One more time, just close your eyes"],
-      [30000, "We can make it if we try"],
-      [35000, "One more time, one more time"],
-      [40000, "I wanna make this moment last forever"],
-      [45000, "I know that we can fight through any weather"],
-      [50000, "One more time, say you'll be mine"],
-      [55000, "One more time, just close your eyes"],
-      [60000, "We can make it if we try"],
-      [65000, "One more time"],
-      [70000, ""]
+    { name: "ONE MORE TIME", lyrics: [
+      [0, "🎸 Intro..."],
+      [5000, "I know there's somewhere"],
+      [7500, "Out there for us"],
+      [10000, "We've been through way too much"],
+      [13000, "To give up"],
+      [16000, "Maybe we're damaged"],
+      [18500, "Maybe we're not"],
+      [21000, "I know I still believe in us"],
+      [25000, "One more time"],
+      [27000, "Say you'll be mine"],
+      [29500, "One more time"],
+      [31500, "Just close your eyes"],
+      [34000, "We can make it if we try"],
+      [37000, "One more time"],
+      [39500, "One more time"],
+      [42000, "I wanna make this moment"],
+      [44500, "Last forever"],
+      [47000, "I know that we can"],
+      [49000, "Fight through any weather"],
+      [52000, "One more time"],
+      [54000, "Say you'll be mine"],
+      [57000, "One more time"],
+      [60000, "🔁 Looping..."],
     ]}
   ];
 
@@ -367,10 +539,10 @@
   var jamRunning = false;
   var lyricIdx = 0;
 
-  // ---- UI HANDLERS ----
+  // ==== UI ====
   window.pickSong = function(e, idx) {
     if (!noDouble(e)) return;
-    playDrum(2); // click sound
+    playDrum(2);
     var btns = document.querySelectorAll('.song-item');
     for (var i = 0; i < btns.length; i++) btns[i].className = 'song-item';
     btns[idx].className = 'song-item sel';
@@ -379,19 +551,31 @@
 
   window.startJam = function(e) {
     if (!noDouble(e)) return;
-    playDrum(0); // crash to unlock audio
+    playDrum(0);
+    startBacking(curSong);
     document.getElementById('menu').style.display = 'none';
     document.getElementById('playScreen').style.display = 'flex';
     document.getElementById('songName').textContent = songs[curSong].name;
+    document.getElementById('musicStatus').textContent = '♪ BACKING TRACK PLAYING';
     lyricIdx = 0;
     jamStart = Date.now();
     jamRunning = true;
     updateLyrics();
   };
 
+  window.restartSong = function(e) {
+    if (!noDouble(e)) return;
+    stopBacking();
+    startBacking(curSong);
+    jamStart = Date.now();
+    lyricIdx = 0;
+    playDrum(0);
+  };
+
   window.goBack = function(e) {
     if (!noDouble(e)) return;
     jamRunning = false;
+    stopBacking();
     document.getElementById('playScreen').style.display = 'none';
     document.getElementById('menu').style.display = 'flex';
   };
@@ -401,40 +585,32 @@
     var elapsed = Date.now() - jamStart;
     var lyr = songs[curSong].lyrics;
 
-    // Find current lyric
-    while (lyricIdx < lyr.length - 1 && elapsed >= lyr[lyricIdx + 1][0]) {
-      lyricIdx++;
-    }
+    while (lyricIdx < lyr.length - 1 && elapsed >= lyr[lyricIdx + 1][0]) lyricIdx++;
 
     document.getElementById('lyricLine').textContent = lyr[lyricIdx][1];
-    if (lyricIdx + 1 < lyr.length && lyr[lyricIdx + 1][1]) {
-      document.getElementById('lyricNext').textContent = lyr[lyricIdx + 1][1];
-    } else {
-      document.getElementById('lyricNext').textContent = '';
-    }
+    document.getElementById('lyricNext').textContent =
+      (lyricIdx + 1 < lyr.length && lyr[lyricIdx+1][1]) ? lyr[lyricIdx+1][1] : '';
 
-    // Loop back if song ends
-    if (lyricIdx >= lyr.length - 1 && elapsed > lyr[lyr.length - 1][0] + 3000) {
+    // Loop
+    if (lyricIdx >= lyr.length - 1 && elapsed > lyr[lyr.length-1][0] + 3000) {
+      stopBacking();
+      startBacking(curSong);
       jamStart = Date.now();
       lyricIdx = 0;
     }
-
     requestAnimationFrame(updateLyrics);
   }
 
-  // ---- DRUM TAPS ----
+  // ==== DRUM TAPS ====
   var drums = document.querySelectorAll('.drum');
   for (var i = 0; i < drums.length; i++) {
     (function(el) {
-      var drumType = parseInt(el.getAttribute('data-d'));
+      var dt = parseInt(el.getAttribute('data-d'));
       el.addEventListener('touchstart', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        hitDrum(el, drumType);
+        e.preventDefault(); e.stopPropagation(); hitDrum(el, dt);
       }, { passive: false });
       el.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        hitDrum(el, drumType);
+        e.preventDefault(); hitDrum(el, dt);
       });
     })(drums[i]);
   }
@@ -445,21 +621,12 @@
     setTimeout(function() { el.classList.remove('hit'); }, 100);
   }
 
-  // Keyboard support
-  var keyMap = {
-    'a': 0, 's': 1, 'd': 2, // crash, ride, hihat
-    'f': 3, 'g': 4, 'h': 5, // tom1, snare, tom2
-    ' ': 6 // kick = spacebar
-  };
+  // Keyboard
+  var keyMap = {'a':0,'s':1,'d':2,'f':3,'g':4,'h':5,' ':6};
   document.addEventListener('keydown', function(e) {
-    var type = keyMap[e.key.toLowerCase()];
-    if (type !== undefined) {
-      e.preventDefault();
-      var el = document.querySelector('[data-d="' + type + '"]');
-      hitDrum(el, type);
-    }
+    var t = keyMap[e.key.toLowerCase()];
+    if (t !== undefined) { e.preventDefault(); hitDrum(document.querySelector('[data-d="'+t+'"]'), t); }
   });
-
 })();
 </script>
 </body>

@@ -204,55 +204,68 @@
   function generateSong(idx) {
     var notes = [], bpm, duration, beat, t;
 
-    if (idx === 0) { // All The Small Things ~148 BPM
-      bpm = 148; beat = 60000 / bpm; duration = 45000;
-      for (t = 2000; t < 10000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
-      for (t = 10000; t < 22000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 2]); }
-      for (t = 22000; t < 34000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); if (Math.abs(t % (beat * 4) - beat * 3.5) < beat / 4) notes.push([t, 2]); }
-      for (t = 34000; t < duration; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 2) < 10) notes.push([t, 3]); if (t % (beat * 16) > beat * 14) { notes.push([t + beat / 4, 2]); notes.push([t + beat / 4, 0]); } }
+    if (idx === 0) { // All The Small Things - easy
+      bpm = 120; beat = 60000 / bpm; duration = 40000;
+      // Intro - just hi-hat quarter notes
+      for (t = 3000; t < 10000; t += beat) { notes.push([t, 1]); }
+      // Verse - hi-hat + snare on 3
+      for (t = 10000; t < 22000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t + beat, 0]); }
+      // Chorus - add crash every 4 beats
+      for (t = 22000; t < 34000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
+      // Outro - add toms
+      for (t = 34000; t < duration; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 2]); }
       return { notes: notes, duration: duration, name: "ALL THE SMALL THINGS", bpm: bpm };
     }
-    if (idx === 1) { // What's My Age Again ~160 BPM
-      bpm = 160; beat = 60000 / bpm; duration = 42000;
-      for (t = 1500; t < 12000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
-      for (t = 12000; t < 26000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); if (Math.abs(t % (beat * 4) - beat * 2.5) < beat / 4) notes.push([t, 2]); }
-      for (t = 26000; t < 36000; t += beat / 4) { if (t % (beat / 2) < beat / 4) notes.push([t, 1]); if (Math.abs(t % beat - beat / 2) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 3]); }
-      for (t = 36000; t < duration; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 2]); }
+    if (idx === 1) { // What's My Age Again - easy
+      bpm = 130; beat = 60000 / bpm; duration = 38000;
+      for (t = 2000; t < 12000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
+      for (t = 12000; t < 26000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
+      // Slightly busier section - 8th notes briefly
+      for (t = 26000; t < 32000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 2]); }
+      for (t = 32000; t < duration; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
       return { notes: notes, duration: duration, name: "WHAT'S MY AGE AGAIN?", bpm: bpm };
     }
-    if (idx === 2) { // Dammit ~215 BPM
-      bpm = 215; beat = 60000 / bpm; duration = 38000;
-      for (t = 1000; t < 10000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
-      for (t = 10000; t < 24000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); if (Math.abs(t % (beat * 4) - beat * 3) < 10) notes.push([t, 2]); }
-      for (t = 24000; t < 30000; t += beat) { notes.push([t, 0]); notes.push([t, 3]); notes.push([t + beat / 2, 2]); }
-      for (t = 30000; t < duration; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 3]); }
+    if (idx === 2) { // Dammit - medium (was way too fast at 215)
+      bpm = 140; beat = 60000 / bpm; duration = 36000;
+      for (t = 2000; t < 10000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
+      for (t = 10000; t < 22000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
+      // Breakdown - simple alternating
+      for (t = 22000; t < 28000; t += beat) { notes.push([t, (t % (beat * 2) < 10) ? 0 : 2]); }
+      notes.push([28000, 3]);
+      for (t = 28000; t < duration; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
       return { notes: notes, duration: duration, name: "DAMMIT", bpm: bpm };
     }
-    if (idx === 3) { // Feeling This ~170 BPM
-      bpm = 170; beat = 60000 / bpm; duration = 44000;
-      for (t = 500; t < 4000; t += beat / 4) { notes.push([t, 2]); if (t % beat < 10) notes.push([t, 0]); }
+    if (idx === 3) { // Feeling This - medium
+      bpm = 135; beat = 60000 / bpm; duration = 40000;
+      // Intro - tom hits
+      for (t = 1000; t < 4000; t += beat) { notes.push([t, 2]); }
       notes.push([4000, 3]);
-      for (t = 4000; t < 16000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
-      for (t = 16000; t < 30000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 3]); if (Math.abs(t % (beat * 2) - beat * 1.75) < beat / 4) notes.push([t, 2]); }
-      for (t = 30000; t < 36000; t += beat / 4) { notes.push([t, Math.floor((t - 30000) / (beat / 4)) % 4]); }
-      for (t = 36000; t < duration; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
+      // Verse
+      for (t = 4000; t < 16000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
+      // Chorus - crashes
+      for (t = 16000; t < 28000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
+      // Fill section - cycle through lanes but on quarter notes
+      for (t = 28000; t < 32000; t += beat) { notes.push([t, Math.floor((t - 28000) / beat) % 4]); }
+      // Outro
+      for (t = 32000; t < duration; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
       return { notes: notes, duration: duration, name: "FEELING THIS", bpm: bpm };
     }
-    // ONE MORE TIME ~138 BPM
-    bpm = 138; beat = 60000 / bpm; duration = 48000;
-    for (t = 2000; t < 8000; t += beat) { notes.push([t, 1]); if (t % (beat * 4) < 10) notes.push([t, 3]); }
-    for (t = 8000; t < 10000; t += beat / 2) { notes.push([t, 1]); }
+    // ONE MORE TIME - easy/medium
+    bpm = 115; beat = 60000 / bpm; duration = 44000;
+    // Intro - spacious
+    for (t = 3000; t < 10000; t += beat * 2) { notes.push([t, 1]); }
     notes.push([10000, 3]);
-    for (t = 10000; t < 22000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
-    for (t = 22000; t < 26000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (Math.abs(t % (beat * 4) - beat * 3) < 10) notes.push([t, 2]); }
-    for (t = 25500; t < 26000; t += beat / 4) { notes.push([t, 0]); notes.push([t + beat / 8, 2]); }
+    // Verse
+    for (t = 10000; t < 22000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
+    // Pre-chorus - add toms
+    for (t = 22000; t < 26000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 2]); }
     notes.push([26000, 3]);
-    for (t = 26000; t < 38000; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 3]); if (Math.abs(t % (beat * 4) - beat * 2.5) < beat / 4) notes.push([t, 2]); }
-    for (t = 38000; t < 42000; t += beat) { notes.push([t, 1]); if (t % (beat * 2) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 3]); }
-    var fillPattern = [2, 0, 2, 0, 2, 2, 0, 0];
-    for (t = 42000; t < 44000; t += beat / 4) { notes.push([t, fillPattern[Math.floor((t - 42000) / (beat / 4)) % 8]]); }
-    notes.push([44000, 3]);
-    for (t = 44000; t < duration; t += beat / 2) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 4) < 10) notes.push([t, 3]); }
+    // Chorus
+    for (t = 26000; t < 36000; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); if (t % (beat * 8) < 10) notes.push([t, 3]); }
+    // Bridge - half time
+    for (t = 36000; t < 40000; t += beat * 2) { notes.push([t, 0]); notes.push([t, 3]); }
+    // Outro
+    for (t = 40000; t < duration; t += beat) { notes.push([t, 1]); if (Math.abs(t % (beat * 2) - beat) < 10) notes.push([t, 0]); }
     return { notes: notes, duration: duration, name: "ONE MORE TIME", bpm: bpm };
   }
 
@@ -266,8 +279,8 @@
   };
 
   var LANE_COLORS = ['#ff1493', '#00d4ff', '#00ff88', '#ffcc00'];
-  var PERFECT_WINDOW = 50, GOOD_WINDOW = 120, MISS_WINDOW = 180;
-  var NOTE_SPEED = 0.4, HIT_Y_RATIO = 0.88;
+  var PERFECT_WINDOW = 120, GOOD_WINDOW = 220, MISS_WINDOW = 320;
+  var NOTE_SPEED = 0.28, HIT_Y_RATIO = 0.88;
 
   var canvas = document.getElementById('gameCanvas');
   var ctx = canvas.getContext('2d');

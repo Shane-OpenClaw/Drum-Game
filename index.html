@@ -12,544 +12,454 @@
     touch-action: manipulation; user-select: none; -webkit-user-select: none;
     -webkit-touch-callout: none;
   }
-  #startScreen {
-    position: fixed; top:0; left:0; right:0; bottom:0;
+
+  /* MENU */
+  #menu {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: #0a0a0a; display: flex; flex-direction: column;
     align-items: center; justify-content: center; z-index: 100;
     text-align: center; padding: 20px;
   }
-  #startScreen h1 {
+  #menu h1 {
     font-size: 7vw; color: #ff1493;
     text-shadow: 0 0 20px #ff1493, 0 0 40px #ff1493;
-    margin-bottom: 10px; letter-spacing: 4px;
+    margin-bottom: 5px; letter-spacing: 3px;
   }
-  .subtitle { font-size: 3.5vw; color: #00d4ff; margin-bottom: 30px; text-shadow: 0 0 10px #00d4ff; }
-  .dedication { font-size: 4vw; color: #ffcc00; margin-bottom: 30px; text-shadow: 0 0 10px #ffcc00; }
-  .start-btn {
+  #menu .sub { font-size: 3vw; color: #00d4ff; margin-bottom: 8px; }
+  #menu .ded { font-size: 3.5vw; color: #ffcc00; margin-bottom: 15px; }
+  .song-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; width: 80%; max-width: 350px; }
+  .song-item {
+    background: none; border: 1px solid #00d4ff; color: #00d4ff;
+    font-family: 'Courier New', monospace; font-size: 3.2vw;
+    padding: 10px 16px; -webkit-appearance: none; border-radius: 0; cursor: pointer;
+    text-align: left;
+  }
+  .song-item:active, .song-item.sel { background: #00d4ff; color: #000; }
+  .go-btn {
     background: none; border: 2px solid #ff1493; color: #ff1493;
     font-family: 'Courier New', monospace; font-size: 5vw;
-    padding: 15px 40px; letter-spacing: 3px; text-transform: uppercase;
-    display: block; margin: 8px auto; -webkit-appearance: none; border-radius: 0;
-    cursor: pointer;
+    padding: 12px 36px; letter-spacing: 3px; -webkit-appearance: none;
+    border-radius: 0; cursor: pointer;
   }
-  .start-btn:active { background: #ff1493; color: #000; }
-  .song-select { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
-  .song-btn {
-    background: none; border: 1px solid #00d4ff; color: #00d4ff;
-    font-family: 'Courier New', monospace; font-size: 3.5vw;
-    padding: 12px 24px; -webkit-appearance: none; border-radius: 0;
-    cursor: pointer;
+  .go-btn:active { background: #ff1493; color: #000; }
+  .hint { font-size: 2.5vw; color: #555; margin-top: 12px; }
+
+  /* PLAY SCREEN */
+  #playScreen {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    flex-direction: column; background: #0a0a0a;
   }
-  .song-btn:active, .song-btn.selected { background: #00d4ff; color: #000; }
-  #gameArea {
-    display: none; width: 100%; height: 100vh; position: relative; overflow: hidden;
+
+  /* Top: lyrics */
+  #lyricsBar {
+    height: 22vh; overflow: hidden; position: relative;
+    background: linear-gradient(to bottom, #111, #0a0a0a);
+    border-bottom: 1px solid #222;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 10px 15px;
   }
-  #hud {
-    position: absolute; top: 0; left: 0; right: 0;
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 15px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
-    z-index: 10; font-size: 3.5vw;
+  #songName {
+    font-size: 3vw; color: #ff1493; margin-bottom: 6px;
+    text-shadow: 0 0 10px #ff1493;
   }
-  #score { color: #ff1493; text-shadow: 0 0 10px #ff1493; }
-  #combo { color: #00d4ff; text-shadow: 0 0 10px #00d4ff; }
-  #songTitle { color: #ffcc00; font-size: 2.5vw; text-shadow: 0 0 10px #ffcc00; }
-  #multiplier { color: #00ff88; text-shadow: 0 0 10px #00ff88; }
-  canvas { display: block; width: 100%; height: 100%; }
-  #feedbackText {
-    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 8vw; font-weight: bold; z-index: 20; pointer-events: none;
-    opacity: 0; transition: opacity 0.15s; text-shadow: 0 0 20px currentColor;
+  #lyricLine {
+    font-size: 4.5vw; color: #fff; min-height: 2.2em;
+    line-height: 1.4; transition: opacity 0.3s;
   }
-  #endScreen {
-    position: fixed; top:0; left:0; right:0; bottom:0;
-    background: rgba(10,10,10,0.95); display: none; flex-direction: column;
-    align-items: center; justify-content: center; z-index: 100;
-    text-align: center; padding: 20px;
+  #lyricNext {
+    font-size: 3vw; color: #555; min-height: 1.5em; margin-top: 4px;
   }
-  #endScreen h2 { font-size: 6vw; color: #ff1493; text-shadow: 0 0 20px #ff1493; margin-bottom: 15px; }
-  .stat { font-size: 3.5vw; margin: 8px 0; }
-  .stat-val { color: #00d4ff; }
-  #grade { font-size: 15vw; margin: 20px 0; text-shadow: 0 0 30px currentColor; }
-  .touch-lanes {
+  #backBtn {
+    position: absolute; top: 8px; right: 12px;
+    background: none; border: 1px solid #555; color: #555;
+    font-family: 'Courier New', monospace; font-size: 2.5vw;
+    padding: 4px 10px; -webkit-appearance: none; border-radius: 0; cursor: pointer;
+  }
+
+  /* Drum kit area */
+  #drumKit {
+    flex: 1; display: grid; padding: 8px; gap: 6px;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-areas:
+      "crash ride hihat"
+      "tom1  snare tom2"
+      "kick  kick  kick";
+  }
+
+  .drum {
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; cursor: pointer;
+    position: relative; overflow: hidden;
+    transition: transform 0.05s;
+    border: 3px solid rgba(255,255,255,0.2);
+  }
+  .drum:active, .drum.hit { transform: scale(0.92); }
+  .drum .name {
+    font-size: 3.5vw; font-weight: bold; letter-spacing: 1px;
+    text-shadow: 0 0 10px currentColor;
+    pointer-events: none; z-index: 2;
+  }
+  .drum .sub-name {
+    font-size: 2vw; opacity: 0.6; pointer-events: none; z-index: 2;
+  }
+  .drum .flash {
     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    display: flex; z-index: 8;
+    background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
+    opacity: 0; transition: opacity 0.1s; pointer-events: none;
   }
-  .touch-lane {
-    flex: 1; display: flex; align-items: flex-end; justify-content: center;
-    border-left: 1px solid rgba(255,255,255,0.08);
-    padding-bottom: 3vh;
-  }
-  .touch-lane:first-child { border-left: none; }
-  .touch-lane.pressed { background: rgba(255,255,255,0.1); }
-  .key-hint { font-size: 2.5vw; opacity: 0.5; pointer-events: none; }
+  .drum.hit .flash { opacity: 1; }
+
+  #crash  { grid-area: crash;  background: radial-gradient(circle, #4a3500 0%, #1a1200 100%); color: #ffcc00; border-color: #ffcc0044; }
+  #ride   { grid-area: ride;   background: radial-gradient(circle, #3a3a15 0%, #151508 100%); color: #cccc44; border-color: #cccc4444; }
+  #hihat  { grid-area: hihat;  background: radial-gradient(circle, #003344 0%, #001118 100%); color: #00d4ff; border-color: #00d4ff44; }
+  #tom1   { grid-area: tom1;   background: radial-gradient(circle, #1a0033 0%, #0a0015 100%); color: #aa44ff; border-color: #aa44ff44; }
+  #snare  { grid-area: snare;  background: radial-gradient(circle, #440020 0%, #1a000a 100%); color: #ff1493; border-color: #ff149344; }
+  #tom2   { grid-area: tom2;   background: radial-gradient(circle, #002a00 0%, #000f00 100%); color: #00ff88; border-color: #00ff8844; }
+  #kick   { grid-area: kick;   background: radial-gradient(circle, #1a1a1a 0%, #080808 100%); color: #ffffff; border-color: #ffffff22; border-radius: 20px; }
 </style>
 </head>
 <body>
 
-<div id="startScreen">
+<div id="menu">
   <h1>DRUM LIKE BARKER</h1>
-  <div class="subtitle">A BLINK-182 DRUMMING GAME</div>
-  <div class="dedication">YO CAMERON - CAN YOU KEEP UP?</div>
-  <div class="song-select">
-    <button class="song-btn selected" ontouchstart="selectSong(event,0)" onclick="selectSong(event,0)">ALL THE SMALL THINGS</button>
-    <button class="song-btn" ontouchstart="selectSong(event,1)" onclick="selectSong(event,1)">WHAT'S MY AGE AGAIN?</button>
-    <button class="song-btn" ontouchstart="selectSong(event,2)" onclick="selectSong(event,2)">DAMMIT</button>
-    <button class="song-btn" ontouchstart="selectSong(event,3)" onclick="selectSong(event,3)">FEELING THIS</button>
-    <button class="song-btn" ontouchstart="selectSong(event,4)" onclick="selectSong(event,4)">ONE MORE TIME</button>
+  <div class="sub">A BLINK-182 DRUMMING GAME</div>
+  <div class="ded">YO CAMERON - CAN YOU KEEP UP?</div>
+  <div class="song-list">
+    <button class="song-item sel" data-s="0" ontouchstart="pickSong(event,0)" onclick="pickSong(event,0)">ALL THE SMALL THINGS</button>
+    <button class="song-item" data-s="1" ontouchstart="pickSong(event,1)" onclick="pickSong(event,1)">WHAT'S MY AGE AGAIN?</button>
+    <button class="song-item" data-s="2" ontouchstart="pickSong(event,2)" onclick="pickSong(event,2)">DAMMIT</button>
+    <button class="song-item" data-s="3" ontouchstart="pickSong(event,3)" onclick="pickSong(event,3)">FEELING THIS</button>
+    <button class="song-item" data-s="4" ontouchstart="pickSong(event,4)" onclick="pickSong(event,4)">ONE MORE TIME</button>
   </div>
-  <button class="start-btn" ontouchstart="startGame(event)" onclick="startGame(event)">PLAY</button>
-  <div style="margin-top:20px;font-size:12px;color:#666;">TAP THE COLUMN WHEN A NOTE REACHES THE LINE</div>
+  <button class="go-btn" ontouchstart="startJam(event)" onclick="startJam(event)">JAM</button>
+  <div class="hint">TAP THE DRUMS AND PLAY ALONG</div>
 </div>
 
-<div id="gameArea">
-  <div id="hud">
-    <span id="score">0</span>
-    <span id="songTitle"></span>
-    <span id="combo">0x</span>
-    <span id="multiplier">x1</span>
+<div id="playScreen">
+  <div id="lyricsBar">
+    <button id="backBtn" ontouchstart="goBack(event)" onclick="goBack(event)">BACK</button>
+    <div id="songName"></div>
+    <div id="lyricLine"></div>
+    <div id="lyricNext"></div>
   </div>
-  <canvas id="gameCanvas"></canvas>
-  <div id="feedbackText"></div>
-  <div class="touch-lanes" id="touchLanes">
-    <div class="touch-lane" data-lane="0"><span class="key-hint" style="color:#ff1493">SNARE</span></div>
-    <div class="touch-lane" data-lane="1"><span class="key-hint" style="color:#00d4ff">HI-HAT</span></div>
-    <div class="touch-lane" data-lane="2"><span class="key-hint" style="color:#00ff88">TOM</span></div>
-    <div class="touch-lane" data-lane="3"><span class="key-hint" style="color:#ffcc00">CRASH</span></div>
-  </div>
-</div>
-
-<div id="endScreen">
-  <h2>SONG COMPLETE!</h2>
-  <div id="grade"></div>
-  <div class="stat">SCORE: <span class="stat-val" id="finalScore"></span></div>
-  <div class="stat">MAX COMBO: <span class="stat-val" id="finalCombo"></span></div>
-  <div class="stat">PERFECT: <span class="stat-val" id="perfectCount"></span></div>
-  <div class="stat">GOOD: <span class="stat-val" id="goodCount"></span></div>
-  <div class="stat">MISS: <span class="stat-val" id="missCount"></span></div>
-  <div class="stat">ACCURACY: <span class="stat-val" id="accuracy"></span></div>
-  <div style="margin-top:20px;">
-    <button class="start-btn" ontouchstart="startGame(event)" onclick="startGame(event)">REPLAY</button>
-    <button class="start-btn" ontouchstart="goToMenu(event)" onclick="goToMenu(event)">MENU</button>
+  <div id="drumKit">
+    <div class="drum" id="crash"  data-d="0"><div class="flash"></div><div class="name">CRASH</div></div>
+    <div class="drum" id="ride"   data-d="1"><div class="flash"></div><div class="name">RIDE</div></div>
+    <div class="drum" id="hihat"  data-d="2"><div class="flash"></div><div class="name">HI-HAT</div></div>
+    <div class="drum" id="tom1"   data-d="3"><div class="flash"></div><div class="name">TOM 1</div><div class="sub-name">HIGH</div></div>
+    <div class="drum" id="snare"  data-d="4"><div class="flash"></div><div class="name">SNARE</div></div>
+    <div class="drum" id="tom2"   data-d="5"><div class="flash"></div><div class="name">TOM 2</div><div class="sub-name">LOW</div></div>
+    <div class="drum" id="kick"   data-d="6"><div class="flash"></div><div class="name">KICK</div></div>
   </div>
 </div>
 
 <script>
 (function() {
   var lastTap = 0;
-  function isTap(e) {
-    if (e && e.type === 'touchstart') {
-      e.preventDefault();
-      lastTap = Date.now();
-      return true;
-    }
+  function noDouble(e) {
+    if (e && e.type === 'touchstart') { e.preventDefault(); lastTap = Date.now(); return true; }
     if (e && e.type === 'click' && Date.now() - lastTap < 500) return false;
     return true;
   }
 
-  // AUDIO - generate WAV data URIs and use HTML5 Audio (most iOS-compatible)
-  function generateWav(samples, sampleRate) {
-    var numSamples = samples.length;
-    var buffer = new ArrayBuffer(44 + numSamples * 2);
-    var view = new DataView(buffer);
-    function writeString(offset, str) { for (var i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); }
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + numSamples * 2, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, numSamples * 2, true);
-    for (var i = 0; i < numSamples; i++) {
-      var s = Math.max(-1, Math.min(1, samples[i]));
-      view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-    }
-    var bytes = new Uint8Array(buffer);
-    var binary = '';
-    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-    return 'data:audio/wav;base64,' + btoa(binary);
+  // ---- AUDIO: generate WAV data URIs ----
+  var sr = 22050;
+
+  function toWav(samples) {
+    var n = samples.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    function ws(o, s) { for (var i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
+    ws(0,'RIFF'); v.setUint32(4, 36 + n * 2, true); ws(8,'WAVE'); ws(12,'fmt ');
+    v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
+    v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    ws(36,'data'); v.setUint32(40, n * 2, true);
+    for (var i = 0; i < n; i++) { var s = Math.max(-1, Math.min(1, samples[i])); v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true); }
+    var bytes = new Uint8Array(buf), bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return 'data:audio/wav;base64,' + btoa(bin);
   }
 
-  // Generate drum samples
-  var sr = 22050;
-  function makeSnare() {
-    var len = Math.floor(sr * 0.15), out = new Float32Array(len);
-    for (var i = 0; i < len; i++) { var env = Math.pow(1 - i / len, 3); out[i] = (Math.random() * 2 - 1) * env * 0.8; }
+  // 7 drum sounds
+  function makeCrash() {
+    var len = sr * 0.5, out = new Float32Array(len);
+    for (var i = 0; i < len; i++) out[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/len, 1.2) * 0.6;
+    return out;
+  }
+  function makeRide() {
+    var len = sr * 0.3, out = new Float32Array(len);
+    for (var i = 0; i < len; i++) out[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/len, 2.5) * 0.4;
     return out;
   }
   function makeHihat() {
-    var len = Math.floor(sr * 0.06), out = new Float32Array(len);
-    for (var i = 0; i < len; i++) { var env = Math.pow(1 - i / len, 5); out[i] = (Math.random() * 2 - 1) * env * 0.6; }
+    var len = sr * 0.06, out = new Float32Array(len);
+    for (var i = 0; i < len; i++) out[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/len, 5) * 0.5;
     return out;
   }
-  function makeTom() {
-    var len = Math.floor(sr * 0.2), out = new Float32Array(len);
-    for (var i = 0; i < len; i++) { var env = Math.pow(1 - i / len, 2); var freq = 150 - (110 * i / len); out[i] = Math.sin(2 * Math.PI * freq * i / sr) * env * 0.7; }
+  function makeTomHi() {
+    var len = sr * 0.2, out = new Float32Array(len);
+    for (var i = 0; i < len; i++) { var e = Math.pow(1 - i/len, 2); out[i] = Math.sin(2*Math.PI*(180 - 80*i/len)*i/sr) * e * 0.7; }
     return out;
   }
-  function makeCrash() {
-    var len = Math.floor(sr * 0.35), out = new Float32Array(len);
-    for (var i = 0; i < len; i++) { var env = Math.pow(1 - i / len, 1.5); out[i] = (Math.random() * 2 - 1) * env * 0.5; }
+  function makeSnare() {
+    var len = sr * 0.15, out = new Float32Array(len);
+    for (var i = 0; i < len; i++) {
+      var e = Math.pow(1 - i/len, 3);
+      out[i] = ((Math.random() * 2 - 1) * 0.6 + Math.sin(2*Math.PI*180*i/sr) * 0.4) * e * 0.8;
+    }
+    return out;
+  }
+  function makeTomLo() {
+    var len = sr * 0.25, out = new Float32Array(len);
+    for (var i = 0; i < len; i++) { var e = Math.pow(1 - i/len, 2); out[i] = Math.sin(2*Math.PI*(110 - 60*i/len)*i/sr) * e * 0.7; }
+    return out;
+  }
+  function makeKick() {
+    var len = sr * 0.25, out = new Float32Array(len);
+    for (var i = 0; i < len; i++) {
+      var e = Math.pow(1 - i/len, 2);
+      out[i] = Math.sin(2*Math.PI*(160 - 120*i/len)*i/sr) * e * 0.9;
+    }
     return out;
   }
 
-  var drumWavs = [
-    generateWav(makeSnare(), sr),
-    generateWav(makeHihat(), sr),
-    generateWav(makeTom(), sr),
-    generateWav(makeCrash(), sr)
-  ];
+  var makers = [makeCrash, makeRide, makeHihat, makeTomHi, makeSnare, makeTomLo, makeKick];
+  var wavs = [];
+  for (var i = 0; i < makers.length; i++) wavs.push(toWav(makers[i]()));
 
-  // Pool of Audio elements per drum type for overlapping sounds
-  var drumPools = [[], [], [], []];
-  var poolSize = 4;
-  for (var d = 0; d < 4; d++) {
-    for (var p = 0; p < poolSize; p++) {
-      var a = new Audio(drumWavs[d]);
+  // Audio pools
+  var pools = [], pIdx = [];
+  for (var d = 0; d < 7; d++) {
+    pools[d] = []; pIdx[d] = 0;
+    for (var p = 0; p < 4; p++) {
+      var a = new Audio(wavs[d]);
       a.preload = 'auto';
-      a.volume = 1.0;
-      drumPools[d].push(a);
+      pools[d].push(a);
     }
   }
-  var poolIndex = [0, 0, 0, 0];
 
-  // iOS needs Audio.play() called from user gesture to unlock
-  // We handle this by calling playDrumSound from tap handlers
-  function playDrumSound(type) {
+  function playDrum(type) {
     try {
-      var pool = drumPools[type];
-      var idx = poolIndex[type];
-      var audio = pool[idx];
-      audio.currentTime = 0;
-      audio.play();
-      poolIndex[type] = (idx + 1) % poolSize;
+      var a = pools[type][pIdx[type]];
+      a.currentTime = 0;
+      a.play();
+      pIdx[type] = (pIdx[type] + 1) % 4;
     } catch(e) {}
   }
 
-  function generateSong(idx) {
-    var notes = [], bpm, duration, beat, t;
+  // ---- LYRICS ----
+  var songs = [
+    { name: "ALL THE SMALL THINGS", bpm: 148, lyrics: [
+      [0, "All the small things"],
+      [3000, "True care, truth brings"],
+      [6000, "I'll take one lift"],
+      [9000, "Your ride, best trip"],
+      [12000, "Always, I know"],
+      [15000, "You'll be at my show"],
+      [18000, "Watching, waiting"],
+      [21000, "Commiserating"],
+      [24000, "Say it ain't so, I will not go"],
+      [28000, "Turn the lights off, carry me home"],
+      [32000, "Na-na, na-na, na-na, na-na, na-na"],
+      [36000, "Na-na, na-na, na-na, na-na, na-na"],
+      [40000, "Na-na, na-na, na-na, na-na, na-na"],
+      [44000, "Na-na, na-na, na-na, na-na, na-na"],
+      [48000, "Late night, come home"],
+      [51000, "Work sucks, I know"],
+      [54000, "She left me roses by the stairs"],
+      [58000, "Surprises let me know she cares"],
+      [62000, "Say it ain't so, I will not go"],
+      [66000, "Turn the lights off, carry me home"],
+      [70000, "Na-na, na-na, na-na, na-na, na-na"],
+      [74000, "Na-na, na-na, na-na, na-na, na-na"],
+      [78000, "Say it ain't so, I will not go"],
+      [82000, "Turn the lights off, carry me home"],
+      [86000, "Keep your head still, I'll be your thrill"],
+      [90000, "The night will go on, my little windmill"],
+      [94000, ""]
+    ]},
+    { name: "WHAT'S MY AGE AGAIN?", bpm: 160, lyrics: [
+      [0, "I took her out, it was a Friday night"],
+      [4000, "I wore cologne to get the feeling right"],
+      [8000, "We started making out and she took off my pants"],
+      [12000, "But then I turned on the TV"],
+      [15000, "And that's about the time she walked away from me"],
+      [19000, "Nobody likes you when you're twenty-three"],
+      [23000, "And are still more amused by TV shows"],
+      [27000, "What the hell is ADD?"],
+      [30000, "My friends say I should act my age"],
+      [34000, "What's my age again?"],
+      [37000, "What's my age again?"],
+      [40000, "Then later on, on the drive home"],
+      [44000, "I called her mom from a pay phone"],
+      [48000, "I said I was the cops"],
+      [51000, "And your husband's in jail"],
+      [54000, "This state looks down on sodomy"],
+      [58000, "And that's about the time that bitch hung up on me"],
+      [62000, "Nobody likes you when you're twenty-three"],
+      [66000, "And are still more amused by prank phone calls"],
+      [70000, "What the hell is caller ID?"],
+      [74000, "My friends say I should act my age"],
+      [78000, "What's my age again?"],
+      [81000, "What's my age again?"],
+      [84000, ""]
+    ]},
+    { name: "DAMMIT", bpm: 215, lyrics: [
+      [0, "It's alright to tell me what you think about me"],
+      [4000, "I won't try to argue or hold it against you"],
+      [8000, "I know that you're leaving, you must have your reasons"],
+      [12000, "The season is calling, your pictures are falling down"],
+      [16000, "The steps that I retrace, the sad look on your face"],
+      [20000, "The timing and structure, did you hear he fucked her?"],
+      [24000, "Well I'll be damned"],
+      [27000, "Well I'll be damned"],
+      [30000, "And I guess this is growing up"],
+      [34000, "And I guess this is growing up"],
+      [38000, "And I guess this is growing up"],
+      [42000, "Well I guess this is growing up"],
+      [46000, "And I guess this is growing up"],
+      [50000, "And I guess this is growing up"],
+      [54000, ""]
+    ]},
+    { name: "FEELING THIS", bpm: 170, lyrics: [
+      [0, "I got no regret right now, I'm feeling this"],
+      [4000, "The air is so cold and low, I'm feeling this"],
+      [8000, "Let me go in her room, I'm feeling this"],
+      [12000, "I wanna take off her clothes"],
+      [15000, "Show me the way to bed"],
+      [18000, "Show me the way you move"],
+      [21000, "Fastest thing that's on my mind"],
+      [24000, "Fate fell short this time"],
+      [27000, "Your smile fades in the summer"],
+      [30000, "Place your hand in mine"],
+      [33000, "I'll leave when I wanna"],
+      [36000, "Where do we go from here?"],
+      [39000, "Turn all the lights down now"],
+      [42000, "Smiling from ear to ear"],
+      [45000, "Are you feeling this?"],
+      [48000, "Fate fell short this time"],
+      [51000, "Your smile fades in the summer"],
+      [54000, "Place your hand in mine"],
+      [57000, "I'll leave when I wanna"],
+      [60000, ""]
+    ]},
+    { name: "ONE MORE TIME", bpm: 138, lyrics: [
+      [0, "I know there's somewhere out there for us"],
+      [5000, "We've been through way too much to give up"],
+      [10000, "Maybe we're damaged, maybe we're not"],
+      [15000, "But I know I still believe in us"],
+      [20000, "One more time, say you'll be mine"],
+      [25000, "One more time, just close your eyes"],
+      [30000, "We can make it if we try"],
+      [35000, "One more time, one more time"],
+      [40000, "I wanna make this moment last forever"],
+      [45000, "I know that we can fight through any weather"],
+      [50000, "One more time, say you'll be mine"],
+      [55000, "One more time, just close your eyes"],
+      [60000, "We can make it if we try"],
+      [65000, "One more time"],
+      [70000, ""]
+    ]}
+  ];
 
-    if (idx === 0) { // All The Small Things
-      bpm = 80; beat = 60000 / bpm; duration = 40000;
-      for (t = 3000; t < 10000; t += beat * 2) { notes.push([t, 1]); }
-      for (t = 10000; t < 22000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      for (t = 22000; t < 34000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      for (t = 22000; t < 34000; t += beat * 8) { notes.push([t, 3]); }
-      for (t = 34000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 2]); }
-      return { notes: notes, duration: duration, name: "ALL THE SMALL THINGS", bpm: bpm };
-    }
-    if (idx === 1) { // What's My Age Again
-      bpm = 85; beat = 60000 / bpm; duration = 38000;
-      for (t = 2000; t < 12000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      for (t = 12000; t < 26000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      for (t = 12000; t < 26000; t += beat * 8) { notes.push([t, 3]); }
-      for (t = 26000; t < 32000; t += beat * 2) { notes.push([t, 2]); notes.push([t + beat, 0]); }
-      for (t = 32000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      return { notes: notes, duration: duration, name: "WHAT'S MY AGE AGAIN?", bpm: bpm };
-    }
-    if (idx === 2) { // Dammit
-      bpm = 90; beat = 60000 / bpm; duration = 36000;
-      for (t = 2000; t < 10000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      for (t = 10000; t < 22000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      for (t = 10000; t < 22000; t += beat * 8) { notes.push([t, 3]); }
-      for (t = 22000; t < 28000; t += beat * 2) { notes.push([t, 0]); notes.push([t + beat, 2]); }
-      notes.push([28000, 3]);
-      for (t = 28000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      return { notes: notes, duration: duration, name: "DAMMIT", bpm: bpm };
-    }
-    if (idx === 3) { // Feeling This
-      bpm = 85; beat = 60000 / bpm; duration = 40000;
-      for (t = 1000; t < 4000; t += beat * 2) { notes.push([t, 2]); }
-      notes.push([4500, 3]);
-      for (t = 5000; t < 16000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      for (t = 16000; t < 28000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      for (t = 16000; t < 28000; t += beat * 8) { notes.push([t, 3]); }
-      notes.push([28000, 0]); notes.push([28000 + beat, 2]); notes.push([28000 + beat * 2, 1]); notes.push([28000 + beat * 3, 3]);
-      for (t = 32000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-      return { notes: notes, duration: duration, name: "FEELING THIS", bpm: bpm };
-    }
-    // ONE MORE TIME
-    bpm = 75; beat = 60000 / bpm; duration = 44000;
-    for (t = 3000; t < 10000; t += beat * 2) { notes.push([t, 1]); }
-    notes.push([10000, 3]);
-    for (t = 10500; t < 22000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-    for (t = 22000; t < 26000; t += beat * 2) { notes.push([t, 2]); notes.push([t + beat, 0]); }
-    notes.push([26000, 3]);
-    for (t = 26500; t < 36000; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-    for (t = 26500; t < 36000; t += beat * 8) { notes.push([t, 3]); }
-    for (t = 36000; t < 40000; t += beat * 2) { notes.push([t, 0]); }
-    for (t = 40000; t < duration; t += beat * 2) { notes.push([t, 1]); notes.push([t + beat, 0]); }
-    return { notes: notes, duration: duration, name: "ONE MORE TIME", bpm: bpm };
-  }
+  var curSong = 0;
+  var jamStart = 0;
+  var jamRunning = false;
+  var lyricIdx = 0;
 
-  var state = {
-    score: 0, combo: 0, maxCombo: 0, multiplier: 1,
-    perfects: 0, goods: 0, misses: 0,
-    activeNotes: [], songTime: 0,
-    running: false, startTime: 0, songData: null,
-    selectedSong: 0
+  // ---- UI HANDLERS ----
+  window.pickSong = function(e, idx) {
+    if (!noDouble(e)) return;
+    playDrum(2); // click sound
+    var btns = document.querySelectorAll('.song-item');
+    for (var i = 0; i < btns.length; i++) btns[i].className = 'song-item';
+    btns[idx].className = 'song-item sel';
+    curSong = idx;
   };
 
-  var LANE_COLORS = ['#ff1493', '#00d4ff', '#00ff88', '#ffcc00'];
-  // Super generous - if the note is anywhere visible on screen, you can hit it
-  var PERFECT_WINDOW = 400;
-  var GOOD_WINDOW = 800;
-  var MISS_WINDOW = 1200;
-  var NOTE_SPEED = 0.12;
-  var HIT_Y_RATIO = 0.82;
-
-  var canvas = document.getElementById('gameCanvas');
-  var ctx = canvas.getContext('2d');
-  var W, H, laneW;
-  var particles = [];
-  var feedbackTimer = null;
-
-  function resize() {
-    var dpr = window.devicePixelRatio || 1;
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    laneW = W / 4;
-  }
-  window.addEventListener('resize', resize);
-  resize();
-
-  window.selectSong = function(e, idx) {
-    if (!isTap(e)) return;
-    playDrumSound(1);
-    var btns = document.querySelectorAll('.song-btn');
-    for (var i = 0; i < btns.length; i++) btns[i].className = 'song-btn';
-    btns[idx].className = 'song-btn selected';
-    state.selectedSong = idx;
+  window.startJam = function(e) {
+    if (!noDouble(e)) return;
+    playDrum(0); // crash to unlock audio
+    document.getElementById('menu').style.display = 'none';
+    document.getElementById('playScreen').style.display = 'flex';
+    document.getElementById('songName').textContent = songs[curSong].name;
+    lyricIdx = 0;
+    jamStart = Date.now();
+    jamRunning = true;
+    updateLyrics();
   };
 
-  window.startGame = function(e) {
-    if (!isTap(e)) return;
-    playDrumSound(3);
-    state.songData = generateSong(state.selectedSong);
-    state.score = 0; state.combo = 0; state.maxCombo = 0; state.multiplier = 1;
-    state.perfects = 0; state.goods = 0; state.misses = 0;
-    state.activeNotes = [];
-    for (var i = 0; i < state.songData.notes.length; i++) {
-      var n = state.songData.notes[i];
-      state.activeNotes.push({ time: n[0], lane: n[1], hit: false, missed: false });
-    }
-    state.running = true;
-    state.startTime = performance.now();
-    document.getElementById('startScreen').style.display = 'none';
-    document.getElementById('endScreen').style.display = 'none';
-    document.getElementById('gameArea').style.display = 'block';
-    document.getElementById('songTitle').textContent = state.songData.name;
-    resize();
-    requestAnimationFrame(gameLoop);
+  window.goBack = function(e) {
+    if (!noDouble(e)) return;
+    jamRunning = false;
+    document.getElementById('playScreen').style.display = 'none';
+    document.getElementById('menu').style.display = 'flex';
   };
 
-  window.goToMenu = function(e) {
-    if (!isTap(e)) return;
-    document.getElementById('endScreen').style.display = 'none';
-    document.getElementById('startScreen').style.display = 'flex';
-    document.getElementById('gameArea').style.display = 'none';
-  };
+  function updateLyrics() {
+    if (!jamRunning) return;
+    var elapsed = Date.now() - jamStart;
+    var lyr = songs[curSong].lyrics;
 
-  function gameLoop(ts) {
-    if (!state.running) return;
-    state.songTime = ts - state.startTime;
-
-    if (state.songTime > state.songData.duration + 2000) { endGame(); return; }
-
-    for (var i = 0; i < state.activeNotes.length; i++) {
-      var n = state.activeNotes[i];
-      if (!n.hit && !n.missed && state.songTime > n.time + MISS_WINDOW) {
-        n.missed = true; state.misses++; state.combo = 0; state.multiplier = 1;
-        showFeedback('MISS', '#ff4444');
-      }
+    // Find current lyric
+    while (lyricIdx < lyr.length - 1 && elapsed >= lyr[lyricIdx + 1][0]) {
+      lyricIdx++;
     }
 
-    document.getElementById('score').textContent = state.score.toLocaleString();
-    document.getElementById('combo').textContent = state.combo + 'x';
-    document.getElementById('multiplier').textContent = 'x' + state.multiplier;
-
-    ctx.clearRect(0, 0, W, H);
-    var hitY = H * HIT_Y_RATIO;
-
-    // Lane dividers
-    for (var i = 1; i < 4; i++) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(i * laneW, 0); ctx.lineTo(i * laneW, H); ctx.stroke();
+    document.getElementById('lyricLine').textContent = lyr[lyricIdx][1];
+    if (lyricIdx + 1 < lyr.length && lyr[lyricIdx + 1][1]) {
+      document.getElementById('lyricNext').textContent = lyr[lyricIdx + 1][1];
+    } else {
+      document.getElementById('lyricNext').textContent = '';
     }
 
-    // HIT LINE - thick and glowing
-    ctx.save();
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 15;
-    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(W, hitY); ctx.stroke();
-    ctx.restore();
-
-    // Label the hit line
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.font = '10px Courier New';
-    ctx.fillText('TAP HERE', 5, hitY - 8);
-
-    // Notes - BIG
-    for (var i = 0; i < state.activeNotes.length; i++) {
-      var n = state.activeNotes[i];
-      if (n.hit || n.missed) continue;
-      var dt = n.time - state.songTime;
-      var y = hitY - dt * NOTE_SPEED;
-      if (y < -60 || y > H + 60) continue;
-      var x = n.lane * laneW + laneW / 2;
-      var r = Math.min(laneW * 0.38, 36);
-      var col = LANE_COLORS[n.lane];
-
-      // Glow
-      ctx.save();
-      ctx.shadowColor = col;
-      ctx.shadowBlur = 20;
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fillStyle = col; ctx.fill();
-      ctx.restore();
-
-      // Border
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
-
-      // Inner highlight
-      ctx.beginPath(); ctx.arc(x, y, r * 0.4, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fill();
+    // Loop back if song ends
+    if (lyricIdx >= lyr.length - 1 && elapsed > lyr[lyr.length - 1][0] + 3000) {
+      jamStart = Date.now();
+      lyricIdx = 0;
     }
 
-    drawParticles();
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(updateLyrics);
   }
 
-  function spawnParticles(x, y, color) {
-    for (var i = 0; i < 15; i++) {
-      var angle = (Math.PI * 2 / 15) * i + Math.random() * 0.3;
-      var speed = 3 + Math.random() * 5;
-      particles.push({ x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1, color: color, size: 3 + Math.random() * 4 });
-    }
-  }
-
-  function drawParticles() {
-    var alive = [];
-    for (var i = 0; i < particles.length; i++) {
-      var p = particles[i];
-      p.x += p.vx; p.y += p.vy; p.life -= 0.025;
-      if (p.life <= 0) continue;
-      ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
-      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-      ctx.globalAlpha = 1;
-      alive.push(p);
-    }
-    particles = alive;
-  }
-
-  function showFeedback(text, color) {
-    var el = document.getElementById('feedbackText');
-    el.textContent = text; el.style.color = color; el.style.opacity = 1;
-    clearTimeout(feedbackTimer);
-    feedbackTimer = setTimeout(function() { el.style.opacity = 0; }, 400);
-  }
-
-  function hitLane(lane) {
-    if (!state.running) return;
-    playDrumSound(lane);
-
-    // Flash the lane
-    var lanes = document.querySelectorAll('.touch-lane');
-    lanes[lane].className = 'touch-lane pressed';
-    setTimeout(function() { lanes[lane].className = 'touch-lane'; }, 150);
-
-    var hitY = H * HIT_Y_RATIO;
-
-    // Find the NEXT unhit note in this lane - super generous matching
-    var closest = null, closestDt = Infinity;
-    for (var i = 0; i < state.activeNotes.length; i++) {
-      var n = state.activeNotes[i];
-      if (n.lane !== lane || n.hit || n.missed) continue;
-      var dt = n.time - state.songTime; // positive = note hasn't reached line yet
-      var absDt = Math.abs(dt);
-      // Hit if within window OR if the note is visible on screen and approaching
-      if (absDt < MISS_WINDOW || (dt > 0 && dt < 2000)) {
-        if (absDt < closestDt) { closest = n; closestDt = absDt; }
-      }
-    }
-    if (closest) {
-      closest.hit = true;
-      var noteY = hitY - (closest.time - state.songTime) * NOTE_SPEED;
-      spawnParticles(lane * laneW + laneW / 2, noteY, LANE_COLORS[lane]);
-
-      if (closestDt < PERFECT_WINDOW) {
-        state.perfects++; state.score += 100 * state.multiplier; state.combo++;
-        showFeedback('PERFECT!', '#00ff88');
-      } else if (closestDt < GOOD_WINDOW) {
-        state.goods++; state.score += 50 * state.multiplier; state.combo++;
-        showFeedback('GOOD', '#00d4ff');
-      } else {
-        state.goods++; state.score += 25 * state.multiplier; state.combo++;
-        showFeedback('OK', '#ffcc00');
-      }
-      if (state.combo > state.maxCombo) state.maxCombo = state.combo;
-      if (state.combo >= 40) state.multiplier = 4;
-      else if (state.combo >= 20) state.multiplier = 3;
-      else if (state.combo >= 10) state.multiplier = 2;
-      else state.multiplier = 1;
-    }
-  }
-
-  // Keyboard
-  document.addEventListener('keydown', function(e) {
-    var map = { d: 0, f: 1, j: 2, k: 3 };
-    var lane = map[e.key.toLowerCase()];
-    if (lane !== undefined) { e.preventDefault(); hitLane(lane); }
-  });
-
-  // Touch lanes - full screen
-  var lanes = document.querySelectorAll('.touch-lane');
-  for (var i = 0; i < lanes.length; i++) {
+  // ---- DRUM TAPS ----
+  var drums = document.querySelectorAll('.drum');
+  for (var i = 0; i < drums.length; i++) {
     (function(el) {
+      var drumType = parseInt(el.getAttribute('data-d'));
       el.addEventListener('touchstart', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        hitLane(parseInt(el.getAttribute('data-lane')));
+        hitDrum(el, drumType);
       }, { passive: false });
       el.addEventListener('mousedown', function(e) {
         e.preventDefault();
-        hitLane(parseInt(el.getAttribute('data-lane')));
+        hitDrum(el, drumType);
       });
-    })(lanes[i]);
+    })(drums[i]);
   }
 
-  function endGame() {
-    state.running = false;
-    var total = state.perfects + state.goods + state.misses;
-    var acc = total > 0 ? Math.round((state.perfects + state.goods) / total * 100) : 0;
-    var grade, gradeColor;
-    if (acc >= 95) { grade = 'S+'; gradeColor = '#ff1493'; }
-    else if (acc >= 90) { grade = 'S'; gradeColor = '#ff1493'; }
-    else if (acc >= 80) { grade = 'A'; gradeColor = '#00ff88'; }
-    else if (acc >= 70) { grade = 'B'; gradeColor = '#00d4ff'; }
-    else if (acc >= 60) { grade = 'C'; gradeColor = '#ffcc00'; }
-    else { grade = 'D'; gradeColor = '#ff4444'; }
-    document.getElementById('finalScore').textContent = state.score.toLocaleString();
-    document.getElementById('finalCombo').textContent = state.maxCombo;
-    document.getElementById('perfectCount').textContent = state.perfects;
-    document.getElementById('goodCount').textContent = state.goods;
-    document.getElementById('missCount').textContent = state.misses;
-    document.getElementById('accuracy').textContent = acc + '%';
-    var gradeEl = document.getElementById('grade');
-    gradeEl.textContent = grade; gradeEl.style.color = gradeColor;
-    document.getElementById('endScreen').style.display = 'flex';
+  function hitDrum(el, type) {
+    playDrum(type);
+    el.classList.add('hit');
+    setTimeout(function() { el.classList.remove('hit'); }, 100);
   }
+
+  // Keyboard support
+  var keyMap = {
+    'a': 0, 's': 1, 'd': 2, // crash, ride, hihat
+    'f': 3, 'g': 4, 'h': 5, // tom1, snare, tom2
+    ' ': 6 // kick = spacebar
+  };
+  document.addEventListener('keydown', function(e) {
+    var type = keyMap[e.key.toLowerCase()];
+    if (type !== undefined) {
+      e.preventDefault();
+      var el = document.querySelector('[data-d="' + type + '"]');
+      hitDrum(el, type);
+    }
+  });
+
 })();
 </script>
 </body>

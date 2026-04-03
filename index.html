@@ -146,62 +146,89 @@
     return true;
   }
 
-  // AUDIO - init on first user touch of the whole page
-  var audioCtx = null;
-
-  // Called directly inside every user tap handler
-  function ensureAudio() {
-    try {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    } catch(e) {}
+  // AUDIO - generate WAV data URIs and use HTML5 Audio (most iOS-compatible)
+  function generateWav(samples, sampleRate) {
+    var numSamples = samples.length;
+    var buffer = new ArrayBuffer(44 + numSamples * 2);
+    var view = new DataView(buffer);
+    function writeString(offset, str) { for (var i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); }
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + numSamples * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, numSamples * 2, true);
+    for (var i = 0; i < numSamples; i++) {
+      var s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    var bytes = new Uint8Array(buffer);
+    var binary = '';
+    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return 'data:audio/wav;base64,' + btoa(binary);
   }
 
-  function playDrumSound(type) {
-    ensureAudio();
-    if (!audioCtx) return;
-    var now = audioCtx.currentTime;
-    var noise, buf, data, g, f, osc, og;
+  // Generate drum samples
+  var sr = 22050;
+  function makeSnare() {
+    var len = Math.floor(sr * 0.15), out = new Float32Array(len);
+    for (var i = 0; i < len; i++) { var env = Math.pow(1 - i / len, 3); out[i] = (Math.random() * 2 - 1) * env * 0.8; }
+    return out;
+  }
+  function makeHihat() {
+    var len = Math.floor(sr * 0.06), out = new Float32Array(len);
+    for (var i = 0; i < len; i++) { var env = Math.pow(1 - i / len, 5); out[i] = (Math.random() * 2 - 1) * env * 0.6; }
+    return out;
+  }
+  function makeTom() {
+    var len = Math.floor(sr * 0.2), out = new Float32Array(len);
+    for (var i = 0; i < len; i++) { var env = Math.pow(1 - i / len, 2); var freq = 150 - (110 * i / len); out[i] = Math.sin(2 * Math.PI * freq * i / sr) * env * 0.7; }
+    return out;
+  }
+  function makeCrash() {
+    var len = Math.floor(sr * 0.35), out = new Float32Array(len);
+    for (var i = 0; i < len; i++) { var env = Math.pow(1 - i / len, 1.5); out[i] = (Math.random() * 2 - 1) * env * 0.5; }
+    return out;
+  }
 
-    if (type === 0) { // snare
-      noise = audioCtx.createBufferSource();
-      buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
-      data = buf.getChannelData(0);
-      for (var i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
-      noise.buffer = buf;
-      g = audioCtx.createGain(); g.gain.setValueAtTime(0.8, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-      f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1000;
-      noise.connect(f); f.connect(g); g.connect(audioCtx.destination); noise.start(now);
-      osc = audioCtx.createOscillator(); osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.08);
-      og = audioCtx.createGain(); og.gain.setValueAtTime(0.5, now); og.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-      osc.connect(og); og.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.08);
-    } else if (type === 1) { // hi-hat
-      noise = audioCtx.createBufferSource();
-      buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
-      data = buf.getChannelData(0);
-      for (var i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 5);
-      noise.buffer = buf;
-      g = audioCtx.createGain(); g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-      f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 5000;
-      noise.connect(f); f.connect(g); g.connect(audioCtx.destination); noise.start(now);
-    } else if (type === 2) { // tom
-      osc = audioCtx.createOscillator(); osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
-      g = audioCtx.createGain(); g.gain.setValueAtTime(0.7, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-      osc.connect(g); g.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.2);
-    } else { // crash
-      noise = audioCtx.createBufferSource();
-      buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.4, audioCtx.sampleRate);
-      data = buf.getChannelData(0);
-      for (var i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 1.5);
-      noise.buffer = buf;
-      g = audioCtx.createGain(); g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-      f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 3000; f.Q.value = 0.5;
-      noise.connect(f); f.connect(g); g.connect(audioCtx.destination); noise.start(now);
+  var drumWavs = [
+    generateWav(makeSnare(), sr),
+    generateWav(makeHihat(), sr),
+    generateWav(makeTom(), sr),
+    generateWav(makeCrash(), sr)
+  ];
+
+  // Pool of Audio elements per drum type for overlapping sounds
+  var drumPools = [[], [], [], []];
+  var poolSize = 4;
+  for (var d = 0; d < 4; d++) {
+    for (var p = 0; p < poolSize; p++) {
+      var a = new Audio(drumWavs[d]);
+      a.preload = 'auto';
+      a.volume = 1.0;
+      drumPools[d].push(a);
     }
+  }
+  var poolIndex = [0, 0, 0, 0];
+
+  // iOS needs Audio.play() called from user gesture to unlock
+  // We handle this by calling playDrumSound from tap handlers
+  function playDrumSound(type) {
+    try {
+      var pool = drumPools[type];
+      var idx = poolIndex[type];
+      var audio = pool[idx];
+      audio.currentTime = 0;
+      audio.play();
+      poolIndex[type] = (idx + 1) % poolSize;
+    } catch(e) {}
   }
 
   function generateSong(idx) {
@@ -296,7 +323,7 @@
 
   window.selectSong = function(e, idx) {
     if (!isTap(e)) return;
-    ensureAudio();
+    playDrumSound(1);
     var btns = document.querySelectorAll('.song-btn');
     for (var i = 0; i < btns.length; i++) btns[i].className = 'song-btn';
     btns[idx].className = 'song-btn selected';
@@ -305,7 +332,7 @@
 
   window.startGame = function(e) {
     if (!isTap(e)) return;
-    ensureAudio();
+    playDrumSound(3);
     state.songData = generateSong(state.selectedSong);
     state.score = 0; state.combo = 0; state.maxCombo = 0; state.multiplier = 1;
     state.perfects = 0; state.goods = 0; state.misses = 0;

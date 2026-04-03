@@ -158,52 +158,66 @@
     return actx;
   }
 
+  // -- DRUM MASTER GAIN (drums louder than backing) --
+  var drumGain = null;
+  function getDrumBus() {
+    var ctx = getCtx(); if (!ctx) return null;
+    if (!drumGain) {
+      drumGain = ctx.createGain();
+      drumGain.gain.value = 3.0; // drums 3x louder than backing
+      drumGain.connect(ctx.destination);
+    }
+    return drumGain;
+  }
+
   // -- DRUM SOUNDS --
   function playDrum(type) {
     var ctx = getCtx(); if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    var bus = getDrumBus(); if (!bus) return;
     var now = ctx.currentTime, g, osc, noise, buf, data, f, g2;
     if (type === 0) { // crash
-      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.5, ctx.sampleRate); data = buf.getChannelData(0);
-      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,1.2)*0.5;
-      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.6,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.5);
-      noise.connect(g); g.connect(ctx.destination); noise.start(now);
+      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.6, ctx.sampleRate); data = buf.getChannelData(0);
+      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,1.0)*0.7;
+      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.6);
+      noise.connect(g); g.connect(bus); noise.start(now);
     } else if (type === 1) { // ride
-      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.2, ctx.sampleRate); data = buf.getChannelData(0);
-      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,3)*0.35;
-      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.4,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
-      f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=4000;
-      noise.connect(f); f.connect(g); g.connect(ctx.destination); noise.start(now);
+      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.3, ctx.sampleRate); data = buf.getChannelData(0);
+      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2.5)*0.5;
+      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.6,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.3);
+      f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=3500;
+      noise.connect(f); f.connect(g); g.connect(bus); noise.start(now);
     } else if (type === 2) { // hihat
-      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.05, ctx.sampleRate); data = buf.getChannelData(0);
-      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,6)*0.5;
-      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.5,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.05);
-      f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=6000;
-      noise.connect(f); f.connect(g); g.connect(ctx.destination); noise.start(now);
+      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.08, ctx.sampleRate); data = buf.getChannelData(0);
+      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,4)*0.7;
+      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.7,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.08);
+      f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=5000;
+      noise.connect(f); f.connect(g); g.connect(bus); noise.start(now);
     } else if (type === 3) { // tom hi
-      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(200,now); osc.frequency.exponentialRampToValueAtTime(80,now+0.15);
-      g=ctx.createGain(); g.gain.setValueAtTime(0.6,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.15);
-      osc.connect(g); g.connect(ctx.destination); osc.start(now); osc.stop(now+0.15);
+      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(220,now); osc.frequency.exponentialRampToValueAtTime(80,now+0.18);
+      g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.18);
+      osc.connect(g); g.connect(bus); osc.start(now); osc.stop(now+0.18);
     } else if (type === 4) { // snare
-      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.12, ctx.sampleRate); data = buf.getChannelData(0);
-      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,3)*0.7;
-      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.12);
-      f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=1500;
-      noise.connect(f); f.connect(g); g.connect(ctx.destination); noise.start(now);
-      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(180,now); osc.frequency.exponentialRampToValueAtTime(60,now+0.06);
-      g2=ctx.createGain(); g2.gain.setValueAtTime(0.4,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.06);
-      osc.connect(g2); g2.connect(ctx.destination); osc.start(now); osc.stop(now+0.06);
+      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.15, ctx.sampleRate); data = buf.getChannelData(0);
+      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2.5)*0.9;
+      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.15);
+      f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=1200;
+      noise.connect(f); f.connect(g); g.connect(bus); noise.start(now);
+      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(200,now); osc.frequency.exponentialRampToValueAtTime(60,now+0.08);
+      g2=ctx.createGain(); g2.gain.setValueAtTime(0.6,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.08);
+      osc.connect(g2); g2.connect(bus); osc.start(now); osc.stop(now+0.08);
     } else if (type === 5) { // tom lo
-      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(120,now); osc.frequency.exponentialRampToValueAtTime(50,now+0.2);
-      g=ctx.createGain(); g.gain.setValueAtTime(0.6,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
-      osc.connect(g); g.connect(ctx.destination); osc.start(now); osc.stop(now+0.2);
+      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(140,now); osc.frequency.exponentialRampToValueAtTime(45,now+0.25);
+      g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.25);
+      osc.connect(g); g.connect(bus); osc.start(now); osc.stop(now+0.25);
     } else { // kick
-      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(160,now); osc.frequency.exponentialRampToValueAtTime(30,now+0.15);
-      g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
-      osc.connect(g); g.connect(ctx.destination); osc.start(now); osc.stop(now+0.2);
-      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.02, ctx.sampleRate); data = buf.getChannelData(0);
-      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,10)*0.3;
-      noise.buffer=buf; g2=ctx.createGain(); g2.gain.setValueAtTime(0.3,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.02);
-      noise.connect(g2); g2.connect(ctx.destination); noise.start(now);
+      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(180,now); osc.frequency.exponentialRampToValueAtTime(25,now+0.18);
+      g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.25);
+      osc.connect(g); g.connect(bus); osc.start(now); osc.stop(now+0.25);
+      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.03, ctx.sampleRate); data = buf.getChannelData(0);
+      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,8)*0.5;
+      noise.buffer=buf; g2=ctx.createGain(); g2.gain.setValueAtTime(0.5,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.03);
+      noise.connect(g2); g2.connect(bus); noise.start(now);
     }
   }
 
@@ -213,7 +227,7 @@
 
   function stopBacking() {
     for (var i=0; i<backingNodes.length; i++) { try{backingNodes[i].stop();}catch(e){} try{backingNodes[i].disconnect();}catch(e){} }
-    backingNodes = [];
+    backingNodes = []; drumGain = null;
     if (backingTimer) { clearInterval(backingTimer); backingTimer = null; }
   }
 

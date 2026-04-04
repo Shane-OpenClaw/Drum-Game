@@ -63,12 +63,11 @@
   #topBtns { position:absolute; top:6px; right:8px; display:flex; gap:6px; }
   .top-btn {
     background:#ff1493; border:none; color:#000;
-    font-family:'Permanent Marker',cursive; font-size:2.5vw;
-    padding:4px 10px; -webkit-appearance:none; border-radius:0; cursor:pointer;
+    font-family:'Permanent Marker',cursive; font-size:3.5vw;
+    padding:8px 16px; -webkit-appearance:none; border-radius:0; cursor:pointer;
     box-shadow:2px 2px 0 #fff;
   }
   #musicStatus { position:absolute; bottom:4px; right:8px; font-family:'Permanent Marker',cursive; font-size:2vw; color:#00ff88; }
-  #dbg { position:fixed; top:0; left:0; right:0; background:rgba(0,0,0,0.9); color:#0f0; font:12px monospace; padding:6px; z-index:9999; max-height:30vh; overflow-y:auto; }
 
   /* Drum kit */
   #drumKit {
@@ -97,7 +96,6 @@
 </style>
 </head>
 <body>
-<div id="dbg">Audio debug: tap anything...</div>
 
 <div id="menu">
   <div class="smiley">:)</div>
@@ -124,8 +122,8 @@
 <div id="playScreen">
   <div id="topBar">
     <div id="topBtns">
-      <button class="top-btn" ontouchstart="restartSong(event)" onclick="restartSong(event)">RESTART</button>
-      <button class="top-btn" ontouchstart="goBack(event)" onclick="goBack(event)">✕ BACK</button>
+      <button class="top-btn" ontouchstart="restartSong(event)" onclick="restartSong(event)">↺ RESTART</button>
+      <button class="top-btn" ontouchstart="goBack(event)" onclick="goBack(event)">🎵 PICK SONG</button>
     </div>
     <div id="songName"></div>
     <div id="lyricLine"></div>
@@ -150,11 +148,7 @@ var backingTimer = null;
 var backingMeasure = 0;
 var backingStartTime = 0;
 var lastTap = 0;
-var dbgEl;
-function dbg(msg) {
-  if (!dbgEl) dbgEl = document.getElementById('dbg');
-  if (dbgEl) dbgEl.textContent = msg;
-}
+function dbg(msg) { /* debug removed */ }
 
 // Force Safari "playback" audio session (overrides silent switch on iOS)
 // Method 1: Set webkit audio category directly

@@ -43,7 +43,7 @@
     border-radius:0; cursor:pointer; box-shadow:4px 4px 0 #fff; transform:rotate(-1deg);
   }
   .go-btn:active { transform:rotate(-1deg) scale(0.95); box-shadow:2px 2px 0 #fff; }
-  .instructions { font-size:2.5vw; color:#888; max-width:320px; line-height:1.5; margin-top:8px; }
+  .instructions { font-size:2.5vw; color:#fff; max-width:320px; line-height:1.5; margin-top:8px; }
   .instructions strong { color:#fff; font-family:'Permanent Marker',cursive; }
 
   /* PLAY SCREEN */
@@ -142,191 +142,163 @@
 </div>
 
 <script>
-(function() {
-  var lastTap = 0;
-  function noDouble(e) {
-    if (e && e.type === 'touchstart') { e.preventDefault(); lastTap = Date.now(); return true; }
-    if (e && e.type === 'click' && Date.now() - lastTap < 500) return false;
-    return true;
+// NO IIFE — all globals so inline handlers work on iOS
+var actx = null;
+var backingTimer = null;
+var backingMeasure = 0;
+var backingStartTime = 0;
+var lastTap = 0;
+
+// Create or get AudioContext — MUST be called in user gesture call stack
+function getCtx() {
+  if (!actx) {
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+  }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+
+// Prevent double-fire from touchstart+click
+function noDouble(e) {
+  if (e && e.type === 'touchstart') { e.preventDefault(); lastTap = Date.now(); return true; }
+  if (e && e.type === 'click' && Date.now() - lastTap < 500) return false;
+  return true;
+}
+
+// ==== DRUM SOUNDS ====
+function playDrum(type) {
+  var ctx = getCtx(); if (!ctx) return;
+  var D = ctx.destination, now = ctx.currentTime, g, o, n, buf, d, f, g2;
+
+  if (type === 0) { // crash
+    n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.5|0, ctx.sampleRate); d = buf.getChannelData(0);
+    for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.2)*0.8;
+    n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.5);
+    n.connect(g); g.connect(D); n.start(now);
+  } else if (type === 1) { // ride
+    n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.2|0, ctx.sampleRate); d = buf.getChannelData(0);
+    for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3)*0.6;
+    n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.7,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
+    f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=3500;
+    n.connect(f); f.connect(g); g.connect(D); n.start(now);
+  } else if (type === 2) { // hihat
+    n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.06|0, ctx.sampleRate); d = buf.getChannelData(0);
+    for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,5)*0.8;
+    n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.06);
+    f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=5000;
+    n.connect(f); f.connect(g); g.connect(D); n.start(now);
+  } else if (type === 3) { // tom hi
+    o=ctx.createOscillator(); o.frequency.setValueAtTime(220,now); o.frequency.exponentialRampToValueAtTime(80,now+0.15);
+    g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.15);
+    o.connect(g); g.connect(D); o.start(now); o.stop(now+0.16);
+  } else if (type === 4) { // snare
+    n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.12|0, ctx.sampleRate); d = buf.getChannelData(0);
+    for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.5);
+    n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.12);
+    f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=1200;
+    n.connect(f); f.connect(g); g.connect(D); n.start(now);
+    o=ctx.createOscillator(); o.frequency.setValueAtTime(200,now); o.frequency.exponentialRampToValueAtTime(60,now+0.07);
+    g2=ctx.createGain(); g2.gain.setValueAtTime(0.7,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.07);
+    o.connect(g2); g2.connect(D); o.start(now); o.stop(now+0.08);
+  } else if (type === 5) { // tom lo
+    o=ctx.createOscillator(); o.frequency.setValueAtTime(140,now); o.frequency.exponentialRampToValueAtTime(45,now+0.2);
+    g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
+    o.connect(g); g.connect(D); o.start(now); o.stop(now+0.21);
+  } else { // kick
+    o=ctx.createOscillator(); o.frequency.setValueAtTime(160,now); o.frequency.exponentialRampToValueAtTime(30,now+0.15);
+    g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
+    o.connect(g); g.connect(D); o.start(now); o.stop(now+0.21);
+    n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.02|0, ctx.sampleRate); d = buf.getChannelData(0);
+    for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,8)*0.5;
+    n.buffer=buf; g2=ctx.createGain(); g2.gain.setValueAtTime(0.5,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.02);
+    n.connect(g2); g2.connect(D); n.start(now);
+  }
+}
+
+// ==== BACKING TRACK ENGINE ====
+var NF = {
+  'C2':65.41,'D2':73.42,'E2':82.41,'F2':87.31,'G2':98,'A2':110,'B2':123.47,
+  'C3':130.81,'D3':146.83,'E3':164.81,'F3':174.61,'G3':196,'A3':220,'B3':246.94,
+  'C4':261.63,'D4':293.66,'E4':329.63,'F4':349.23,'G4':392,'A4':440,'B4':493.88,
+  'C5':523.25,'E5':659.25,'G5':783.99,
+  'Db2':69.30,'Eb2':77.78,'Gb2':92.50,'Ab2':103.83,'Bb2':116.54,
+  'Db3':138.59,'Eb3':155.56,'Gb3':185,'Ab3':207.65,'Bb3':233.08,
+  'Db4':277.18,'Eb4':311.13,'Gb4':369.99,'Ab4':415.30,'Bb4':466.16
+};
+
+var distCurve = new Float32Array(256);
+for (var j=0;j<256;j++){var x=(j/128)-1; distCurve[j]=(Math.PI+4)*x/(Math.PI+4*Math.abs(x));}
+
+function schedMeasure(ctx, song, mIdx, mStart) {
+  var beatDur = 60 / song.bpm;
+  var ch = song.chords[mIdx % song.chords.length];
+  var bassFreq = NF[ch.b] || 100;
+  var gFreqs = [];
+  for (var c=0; c<ch.g.length; c++) gFreqs.push(NF[ch.g[c]] || 300);
+
+  // Bass: 8th notes
+  for (var b=0; b<8; b++) {
+    var t = mStart + b * beatDur * 0.5;
+    var dur = beatDur * 0.4;
+    var osc = ctx.createOscillator(); osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(bassFreq, t);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    var filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600;
+    osc.connect(filt); filt.connect(g); g.connect(ctx.destination);
+    osc.start(t); osc.stop(t + dur + 0.01);
   }
 
-  // ==== AUDIO ENGINE ====
-  var actx = null;
-  function getCtx() {
-    if (!actx) {
-      try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
-    }
-    if (actx.state === 'suspended') actx.resume();
-    return actx;
-  }
-
-  // iOS audio unlock: play silent buffer + oscillator on first touch
-  var _unlocked = false;
-  function iosUnlock() {
-    if (_unlocked) return;
-    var ctx = getCtx(); if (!ctx) return;
-    // Method 1: silent buffer
-    try {
-      var b = ctx.createBuffer(1, 1, ctx.sampleRate);
-      var s = ctx.createBufferSource(); s.buffer = b;
-      s.connect(ctx.destination); s.start(0); s.stop(0.001);
-    } catch(e) {}
-    // Method 2: silent oscillator
-    try {
-      var o = ctx.createOscillator(); var g = ctx.createGain();
-      g.gain.value = 0; o.connect(g); g.connect(ctx.destination);
-      o.start(0); o.stop(0.001);
-    } catch(e) {}
-    ctx.resume();
-    _unlocked = true;
-  }
-  // Try unlock on every possible event type
-  ['touchstart','touchend','mousedown','click'].forEach(function(evt) {
-    document.addEventListener(evt, iosUnlock, { once: false, passive: true });
-  });
-
-  // -- DRUM SOUNDS (direct to destination, no bus) --
-  function playDrum(type) {
-    var ctx = getCtx(); if (!ctx) return;
-    ctx.resume(); // always resume
-    var D = ctx.destination, now = ctx.currentTime, g, o, n, buf, d, f, g2;
-
-    if (type === 0) { // crash
-      n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.5|0, ctx.sampleRate); d = buf.getChannelData(0);
-      for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.2)*0.8;
-      n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.5);
-      n.connect(g); g.connect(D); n.start(now);
-    } else if (type === 1) { // ride
-      n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.2|0, ctx.sampleRate); d = buf.getChannelData(0);
-      for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3)*0.6;
-      n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.7,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
-      f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=3500;
-      n.connect(f); f.connect(g); g.connect(D); n.start(now);
-    } else if (type === 2) { // hihat
-      n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.06|0, ctx.sampleRate); d = buf.getChannelData(0);
-      for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,5)*0.8;
-      n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.06);
-      f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=5000;
-      n.connect(f); f.connect(g); g.connect(D); n.start(now);
-    } else if (type === 3) { // tom hi
-      o=ctx.createOscillator(); o.frequency.setValueAtTime(220,now); o.frequency.exponentialRampToValueAtTime(80,now+0.15);
-      g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.15);
-      o.connect(g); g.connect(D); o.start(now); o.stop(now+0.16);
-    } else if (type === 4) { // snare
-      n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.12|0, ctx.sampleRate); d = buf.getChannelData(0);
-      for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.5);
-      n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.12);
-      f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=1200;
-      n.connect(f); f.connect(g); g.connect(D); n.start(now);
-      o=ctx.createOscillator(); o.frequency.setValueAtTime(200,now); o.frequency.exponentialRampToValueAtTime(60,now+0.07);
-      g2=ctx.createGain(); g2.gain.setValueAtTime(0.7,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.07);
-      o.connect(g2); g2.connect(D); o.start(now); o.stop(now+0.08);
-    } else if (type === 5) { // tom lo
-      o=ctx.createOscillator(); o.frequency.setValueAtTime(140,now); o.frequency.exponentialRampToValueAtTime(45,now+0.2);
-      g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
-      o.connect(g); g.connect(D); o.start(now); o.stop(now+0.21);
-    } else { // kick
-      o=ctx.createOscillator(); o.frequency.setValueAtTime(160,now); o.frequency.exponentialRampToValueAtTime(30,now+0.15);
-      g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
-      o.connect(g); g.connect(D); o.start(now); o.stop(now+0.21);
-      n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.02|0, ctx.sampleRate); d = buf.getChannelData(0);
-      for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,8)*0.5;
-      n.buffer=buf; g2=ctx.createGain(); g2.gain.setValueAtTime(0.5,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.02);
-      n.connect(g2); g2.connect(D); n.start(now);
-    }
-  }
-
-  // ==== BACKING TRACK ENGINE ====
-  // Schedules only 2 measures ahead at a time (iOS-friendly, <50 nodes at once)
-  var backingTimer = null;
-  var backingMeasure = 0;
-  var backingStartTime = 0;
-  var backingSongIdx = 0;
-
-  var NF = {
-    'C2':65.41,'D2':73.42,'E2':82.41,'F2':87.31,'G2':98,'A2':110,'B2':123.47,
-    'C3':130.81,'D3':146.83,'E3':164.81,'F3':174.61,'G3':196,'A3':220,'B3':246.94,
-    'C4':261.63,'D4':293.66,'E4':329.63,'F4':349.23,'G4':392,'A4':440,'B4':493.88,
-    'C5':523.25,'E5':659.25,'G5':783.99,
-    'Db2':69.30,'Eb2':77.78,'Gb2':92.50,'Ab2':103.83,'Bb2':116.54,
-    'Db3':138.59,'Eb3':155.56,'Gb3':185,'Ab3':207.65,'Bb3':233.08,
-    'Db4':277.18,'Eb4':311.13,'Gb4':369.99,'Ab4':415.30,'Bb4':466.16
-  };
-
-  // Shared waveshaper curve (create once)
-  var distCurve = new Float32Array(256);
-  for (var j=0;j<256;j++){var x=(j/128)-1; distCurve[j]=(Math.PI+4)*x/(Math.PI+4*Math.abs(x));}
-
-  function schedMeasure(ctx, song, mIdx, mStart) {
-    var beatDur = 60 / song.bpm;
-    var ch = song.chords[mIdx % song.chords.length];
-    var bassFreq = NF[ch.b] || 100;
-    var gFreqs = [];
-    for (var c=0; c<ch.g.length; c++) gFreqs.push(NF[ch.g[c]] || 300);
-
-    // Bass: 8th notes
-    for (var b=0; b<8; b++) {
-      var t = mStart + b * beatDur * 0.5;
-      var dur = beatDur * 0.4;
+  // Guitar: quarter note power chords
+  for (var b=0; b<4; b++) {
+    var t = mStart + b * beatDur;
+    var dur = beatDur * 0.8;
+    for (var i=0; i<gFreqs.length; i++) {
       var osc = ctx.createOscillator(); osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(bassFreq, t);
+      osc.frequency.setValueAtTime(gFreqs[i], t);
+      var ws = ctx.createWaveShaper(); ws.curve = distCurve;
       var g = ctx.createGain();
-      g.gain.setValueAtTime(0.2, t);
+      g.gain.setValueAtTime(0.07, t);
       g.gain.linearRampToValueAtTime(0, t + dur);
-      var filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600;
-      osc.connect(filt); filt.connect(g); g.connect(ctx.destination);
+      osc.connect(ws); ws.connect(g); g.connect(ctx.destination);
       osc.start(t); osc.stop(t + dur + 0.01);
     }
+  }
+}
 
-    // Guitar: quarter note power chords (simpler = fewer nodes)
-    for (var b=0; b<4; b++) {
-      var t = mStart + b * beatDur;
-      var dur = beatDur * 0.8;
-      for (var i=0; i<gFreqs.length; i++) {
-        var osc = ctx.createOscillator(); osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(gFreqs[i], t);
-        var ws = ctx.createWaveShaper(); ws.curve = distCurve;
-        var g = ctx.createGain();
-        g.gain.setValueAtTime(0.07, t);
-        g.gain.linearRampToValueAtTime(0, t + dur);
-        osc.connect(ws); ws.connect(g); g.connect(ctx.destination);
-        osc.start(t); osc.stop(t + dur + 0.01);
-      }
+function stopBacking() {
+  if (backingTimer) { clearInterval(backingTimer); backingTimer = null; }
+  // Kill AudioContext entirely to stop all scheduled nodes
+  if (actx) { try { actx.close(); } catch(e) {} actx = null; }
+}
+
+function startBacking(songIdx) {
+  stopBacking();
+  var ctx = getCtx(); if (!ctx) return;
+  var song = songs[songIdx];
+  var beatDur = 60 / song.bpm;
+  var measureDur = beatDur * 4;
+  backingStartTime = ctx.currentTime + 0.1;
+  backingMeasure = 0;
+
+  // Schedule first 2 measures immediately
+  schedMeasure(ctx, song, 0, backingStartTime);
+  schedMeasure(ctx, song, 1, backingStartTime + measureDur);
+  backingMeasure = 2;
+
+  // Lookahead: schedule next measure every 500ms
+  backingTimer = setInterval(function() {
+    if (!actx) return;
+    var now = actx.currentTime;
+    var mTime = backingStartTime + backingMeasure * measureDur;
+    while (mTime - now < 2.0) {
+      schedMeasure(actx, song, backingMeasure, mTime);
+      backingMeasure++;
+      mTime = backingStartTime + backingMeasure * measureDur;
     }
-  }
-
-  function stopBacking() {
-    if (backingTimer) { clearInterval(backingTimer); backingTimer = null; }
-  }
-
-  function startBacking(songIdx) {
-    stopBacking();
-    var ctx = getCtx(); if (!ctx) return;
-    var song = songs[songIdx];
-    backingSongIdx = songIdx;
-    var beatDur = 60 / song.bpm;
-    var measureDur = beatDur * 4;
-    backingStartTime = ctx.currentTime + 0.1;
-    backingMeasure = 0;
-
-    // Schedule first 2 measures immediately
-    schedMeasure(ctx, song, 0, backingStartTime);
-    schedMeasure(ctx, song, 1, backingStartTime + measureDur);
-    backingMeasure = 2;
-
-    // Every 500ms, schedule the next measure if needed (lookahead)
-    backingTimer = setInterval(function() {
-      var ctx2 = getCtx(); if (!ctx2) return;
-      var now = ctx2.currentTime;
-      var mTime = backingStartTime + backingMeasure * measureDur;
-      // Schedule if the measure start is within 2 seconds from now
-      while (mTime - now < 2.0) {
-        schedMeasure(ctx2, song, backingMeasure, mTime);
-        backingMeasure++;
-        mTime = backingStartTime + backingMeasure * measureDur;
-      }
-    }, 500);
-  }
+  }, 500);
+}
 
   // ==== SONG DATA ====
   var songs = [
@@ -474,91 +446,105 @@
     }
   ];
 
-  var curSong = 0;
-  var jamStart = 0;
-  var jamRunning = false;
-  var lyricIdx = 0;
+var curSong = 0;
+var jamStart = 0;
+var jamRunning = false;
+var lyricIdx = 0;
 
-  // ==== UI ====
-  window.pickSong = function(e, idx) {
-    if (!noDouble(e)) return;
-    playDrum(2);
-    var btns = document.querySelectorAll('.song-item');
-    for (var i = 0; i < btns.length; i++) btns[i].className = 'song-item';
-    btns[idx].className = 'song-item sel';
-    curSong = idx;
-  };
+// ==== UI ====
+function pickSong(e, idx) {
+  if (!noDouble(e)) return;
+  getCtx(); // create AudioContext on first interaction
+  playDrum(2);
+  var btns = document.querySelectorAll('.song-item');
+  for (var i = 0; i < btns.length; i++) btns[i].className = 'song-item';
+  btns[idx].className = 'song-item sel';
+  curSong = idx;
+}
 
-  window.startJam = function(e) {
-    if (!noDouble(e)) return;
-    playDrum(0); // crash to unlock audio
-    startBacking(curSong);
-    document.getElementById('songName').textContent = songs[curSong].name;
-    document.getElementById('musicStatus').textContent = '♪ BASS + GUITAR PLAYING — YOU BRING THE DRUMS!';
-    lyricIdx = 0;
-    jamStart = Date.now();
-    jamRunning = true;
-    document.getElementById('menu').style.display = 'none';
-    document.getElementById('playScreen').style.display = 'flex';
-    updateLyrics();
-  };
+function startJam(e) {
+  if (!noDouble(e)) return;
+  // Create AudioContext RIGHT HERE in touch handler call stack
+  var ctx = getCtx();
+  if (ctx) ctx.resume();
+  playDrum(0); // audible crash to confirm audio works
+  startBacking(curSong);
+  document.getElementById('songName').textContent = songs[curSong].name;
+  document.getElementById('musicStatus').textContent = '♪ BASS + GUITAR — YOU BRING THE DRUMS!';
+  lyricIdx = 0;
+  jamStart = Date.now();
+  jamRunning = true;
+  document.getElementById('menu').style.display = 'none';
+  document.getElementById('playScreen').style.display = 'flex';
+  updateLyrics();
+}
 
-  window.restartSong = function(e) {
-    if (!noDouble(e)) return;
-    stopBacking();
-    startBacking(curSong);
-    jamStart = Date.now();
-    lyricIdx = 0;
-    playDrum(0);
-  };
+function restartSong(e) {
+  if (!noDouble(e)) return;
+  stopBacking();
+  var ctx = getCtx();
+  if (ctx) ctx.resume();
+  startBacking(curSong);
+  jamStart = Date.now();
+  lyricIdx = 0;
+  playDrum(0);
+}
 
-  window.goBack = function(e) {
-    if (!noDouble(e)) return;
-    jamRunning = false;
-    stopBacking();
-    document.getElementById('playScreen').style.display = 'none';
-    document.getElementById('menu').style.display = 'flex';
-  };
+function goBack(e) {
+  if (!noDouble(e)) return;
+  jamRunning = false;
+  stopBacking();
+  document.getElementById('playScreen').style.display = 'none';
+  document.getElementById('menu').style.display = 'flex';
+}
 
-  function updateLyrics() {
-    if (!jamRunning) return;
-    var elapsed = Date.now() - jamStart;
-    var lyr = songs[curSong].lyrics;
-    while (lyricIdx < lyr.length - 1 && elapsed >= lyr[lyricIdx + 1][0]) lyricIdx++;
-    document.getElementById('lyricLine').textContent = lyr[lyricIdx][1];
-    var next = (lyricIdx + 1 < lyr.length && lyr[lyricIdx+1][1]) ? lyr[lyricIdx+1][1] : '';
-    document.getElementById('lyricNext').textContent = next;
-    // Loop when song ends
-    if (lyricIdx >= lyr.length - 1 && elapsed > lyr[lyr.length-1][0] + 3000) {
-      stopBacking(); startBacking(curSong);
-      jamStart = Date.now(); lyricIdx = 0;
-    }
-    requestAnimationFrame(updateLyrics);
+function updateLyrics() {
+  if (!jamRunning) return;
+  var elapsed = Date.now() - jamStart;
+  var lyr = songs[curSong].lyrics;
+  while (lyricIdx < lyr.length - 1 && elapsed >= lyr[lyricIdx + 1][0]) lyricIdx++;
+  document.getElementById('lyricLine').textContent = lyr[lyricIdx][1];
+  var next = (lyricIdx + 1 < lyr.length && lyr[lyricIdx+1][1]) ? lyr[lyricIdx+1][1] : '';
+  document.getElementById('lyricNext').textContent = next;
+  if (lyricIdx >= lyr.length - 1 && elapsed > lyr[lyr.length-1][0] + 3000) {
+    stopBacking(); startBacking(curSong);
+    jamStart = Date.now(); lyricIdx = 0;
   }
+  requestAnimationFrame(updateLyrics);
+}
 
-  // ==== DRUM TAPS ====
+// ==== DRUM TAPS ====
+function hitDrum(el, type) {
+  getCtx(); // ensure context exists in this gesture
+  playDrum(type);
+  el.classList.add('hit');
+  setTimeout(function() { el.classList.remove('hit'); }, 100);
+}
+
+// Attach drum touch/click handlers
+document.addEventListener('DOMContentLoaded', function() {
   var drums = document.querySelectorAll('.drum');
   for (var i = 0; i < drums.length; i++) {
     (function(el) {
       var dt = parseInt(el.getAttribute('data-d'));
-      el.addEventListener('touchstart', function(e) { e.preventDefault(); e.stopPropagation(); hitDrum(el, dt); }, { passive: false });
-      el.addEventListener('mousedown', function(e) { e.preventDefault(); hitDrum(el, dt); });
+      el.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        hitDrum(el, dt);
+      }, { passive: false });
+      el.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        hitDrum(el, dt);
+      });
     })(drums[i]);
   }
+});
 
-  function hitDrum(el, type) {
-    playDrum(type);
-    el.classList.add('hit');
-    setTimeout(function() { el.classList.remove('hit'); }, 100);
-  }
-
-  // Keyboard
-  var keyMap = {'a':0,'s':1,'d':2,'f':3,'g':4,'h':5,' ':6};
-  document.addEventListener('keydown', function(e) {
-    var t = keyMap[e.key.toLowerCase()];
-    if (t !== undefined) { e.preventDefault(); hitDrum(document.querySelector('[data-d="'+t+'"]'), t); }
-  });
-})();
+// Keyboard support
+var keyMap = {'a':0,'s':1,'d':2,'f':3,'g':4,'h':5,' ':6};
+document.addEventListener('keydown', function(e) {
+  var t = keyMap[e.key.toLowerCase()];
+  if (t !== undefined) { e.preventDefault(); hitDrum(document.querySelector('[data-d="'+t+'"]'), t); }
+});
 </script>
 </body>
 </html>

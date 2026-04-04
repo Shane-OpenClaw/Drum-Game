@@ -156,32 +156,41 @@ function dbg(msg) {
   if (dbgEl) dbgEl.textContent = msg;
 }
 
-// Force Safari into "playback" audio session (overrides silent switch)
-// Tiny WAV: 1 sample of silence, enough to flip the audio mode
-var silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
-var audioUnlockEl = null;
+// Force Safari "playback" audio session (overrides silent switch on iOS)
+// Method 1: Set webkit audio category directly
+// Method 2: Play looping silent <audio> element to force playback session
+// Method 3: Use audioSession API (iOS 16.4+)
+
+// Generate a short silent WAV as base64 (44 bytes header + 2 bytes silence)
+var silentB64 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRwmHAAAAAAD/+1DEAAAGAAGf9AAAIi2Kcz80AAQAAIA/5c5OIKBh8uf/BwMf8uD58H3+XB9+D4f/y4P/+D7///y5///B8EAQBA0ggCAIeuD4Pv///8QBB3/EAQBA0CAAAADQ0JBQYSEBMYRlpvdvdX19fGhFEQIGDI7/+1DEHQPAAAGkAAAAIAAANIAAAARBkdkclMpNBodEvKimRKSmRv//WjmRIkRNMRT//6aaGYmJT////WiYmGImJ//9aNDERBEQQRXb//11b6WlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpf/7UsQxA8AAAaQAAAAgAAA0gAAABKWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpa';
+var audioEl = null;
 function unlockSilentSwitch() {
-  if (audioUnlockEl) return;
-  audioUnlockEl = document.createElement('audio');
-  audioUnlockEl.controls = false;
-  audioUnlockEl.preload = 'auto';
-  audioUnlockEl.loop = false;
-  audioUnlockEl.src = silentWav;
-  audioUnlockEl.play().then(function() {
-    dbg('Silent switch bypassed');
-  }).catch(function(e) {
-    dbg('Silent bypass err: ' + e.message);
-  });
+  if (audioEl) return;
+  try {
+    audioEl = new Audio(silentB64);
+    audioEl.loop = true;
+    audioEl.volume = 0.01; // near-silent but not zero
+    audioEl.play().catch(function(){});
+  } catch(e) {}
 }
 
 // Create or get AudioContext — MUST be called in user gesture call stack
 function getCtx() {
-  unlockSilentSwitch(); // always try to bypass silent switch
+  unlockSilentSwitch();
   if (!actx) {
     try {
       var AC = window.AudioContext || window.webkitAudioContext;
       actx = new AC();
-      dbg('AudioContext created: state=' + actx.state + ' sr=' + actx.sampleRate);
+      // iOS 16.4+ audioSession API to force playback mode
+      if (navigator.audioSession) {
+        navigator.audioSession.type = 'playback';
+        dbg('audioSession=playback | ctx=' + actx.state);
+      } else if (actx.audioSession) {
+        actx.audioSession.type = 'playback';
+        dbg('ctx.audioSession=playback | ctx=' + actx.state);
+      } else {
+        dbg('NO audioSession API | ctx=' + actx.state + ' sr=' + actx.sampleRate);
+      }
     } catch(e) {
       dbg('AudioContext FAILED: ' + e.message);
       return null;
@@ -189,7 +198,6 @@ function getCtx() {
   }
   if (actx.state === 'suspended') {
     actx.resume();
-    dbg('AudioContext resumed: state=' + actx.state);
   }
   return actx;
 }

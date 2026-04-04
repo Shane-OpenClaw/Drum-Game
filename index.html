@@ -152,97 +152,98 @@
 
   // ==== AUDIO ENGINE ====
   var actx = null;
-  var audioUnlocked = false;
   function getCtx() {
     if (!actx) {
-      try {
-        var AC = window.AudioContext || window.webkitAudioContext;
-        actx = new AC();
-      } catch(e) { return null; }
+      try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
     }
     if (actx.state === 'suspended') actx.resume();
     return actx;
   }
 
-  // iOS requires a silent buffer play on first touch to truly unlock audio
-  function unlockAudio() {
-    if (audioUnlocked) return;
+  // iOS audio unlock: play silent buffer + oscillator on first touch
+  var _unlocked = false;
+  function iosUnlock() {
+    if (_unlocked) return;
     var ctx = getCtx(); if (!ctx) return;
-    var buf = ctx.createBuffer(1, 1, 22050);
-    var src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-    ctx.resume().then(function() { audioUnlocked = true; });
-    audioUnlocked = true; // optimistic
+    // Method 1: silent buffer
+    try {
+      var b = ctx.createBuffer(1, 1, ctx.sampleRate);
+      var s = ctx.createBufferSource(); s.buffer = b;
+      s.connect(ctx.destination); s.start(0); s.stop(0.001);
+    } catch(e) {}
+    // Method 2: silent oscillator
+    try {
+      var o = ctx.createOscillator(); var g = ctx.createGain();
+      g.gain.value = 0; o.connect(g); g.connect(ctx.destination);
+      o.start(0); o.stop(0.001);
+    } catch(e) {}
+    ctx.resume();
+    _unlocked = true;
   }
+  // Try unlock on every possible event type
+  ['touchstart','touchend','mousedown','click'].forEach(function(evt) {
+    document.addEventListener(evt, iosUnlock, { once: false, passive: true });
+  });
 
-  // Unlock on ANY first touch on the page
-  document.addEventListener('touchstart', function() { unlockAudio(); }, { once: true });
-  document.addEventListener('touchend', function() { unlockAudio(); }, { once: true });
-  document.addEventListener('click', function() { unlockAudio(); }, { once: true });
-
-  // -- DRUM SOUNDS --
+  // -- DRUM SOUNDS (direct to destination, no bus) --
   function playDrum(type) {
     var ctx = getCtx(); if (!ctx) return;
-    var dest = ctx.destination;
-    var now = ctx.currentTime, g, osc, noise, buf, data, f, g2;
+    ctx.resume(); // always resume
+    var D = ctx.destination, now = ctx.currentTime, g, o, n, buf, d, f, g2;
+
     if (type === 0) { // crash
-      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.6, ctx.sampleRate); data = buf.getChannelData(0);
-      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,1.0)*0.7;
-      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.6);
-      noise.connect(g); g.connect(dest); noise.start(now);
+      n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.5|0, ctx.sampleRate); d = buf.getChannelData(0);
+      for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.2)*0.8;
+      n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.5);
+      n.connect(g); g.connect(D); n.start(now);
     } else if (type === 1) { // ride
-      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.3, ctx.sampleRate); data = buf.getChannelData(0);
-      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2.5)*0.5;
-      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.6,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.3);
+      n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.2|0, ctx.sampleRate); d = buf.getChannelData(0);
+      for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3)*0.6;
+      n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.7,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
       f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=3500;
-      noise.connect(f); f.connect(g); g.connect(dest); noise.start(now);
+      n.connect(f); f.connect(g); g.connect(D); n.start(now);
     } else if (type === 2) { // hihat
-      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.08, ctx.sampleRate); data = buf.getChannelData(0);
-      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,4)*0.7;
-      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.7,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.08);
+      n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.06|0, ctx.sampleRate); d = buf.getChannelData(0);
+      for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,5)*0.8;
+      n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.06);
       f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=5000;
-      noise.connect(f); f.connect(g); g.connect(dest); noise.start(now);
+      n.connect(f); f.connect(g); g.connect(D); n.start(now);
     } else if (type === 3) { // tom hi
-      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(220,now); osc.frequency.exponentialRampToValueAtTime(80,now+0.18);
-      g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.18);
-      osc.connect(g); g.connect(dest); osc.start(now); osc.stop(now+0.18);
+      o=ctx.createOscillator(); o.frequency.setValueAtTime(220,now); o.frequency.exponentialRampToValueAtTime(80,now+0.15);
+      g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.15);
+      o.connect(g); g.connect(D); o.start(now); o.stop(now+0.16);
     } else if (type === 4) { // snare
-      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.15, ctx.sampleRate); data = buf.getChannelData(0);
-      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2.5)*0.9;
-      noise.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.15);
+      n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.12|0, ctx.sampleRate); d = buf.getChannelData(0);
+      for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.5);
+      n.buffer=buf; g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.12);
       f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=1200;
-      noise.connect(f); f.connect(g); g.connect(dest); noise.start(now);
-      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(200,now); osc.frequency.exponentialRampToValueAtTime(60,now+0.08);
-      g2=ctx.createGain(); g2.gain.setValueAtTime(0.6,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.08);
-      osc.connect(g2); g2.connect(dest); osc.start(now); osc.stop(now+0.08);
+      n.connect(f); f.connect(g); g.connect(D); n.start(now);
+      o=ctx.createOscillator(); o.frequency.setValueAtTime(200,now); o.frequency.exponentialRampToValueAtTime(60,now+0.07);
+      g2=ctx.createGain(); g2.gain.setValueAtTime(0.7,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.07);
+      o.connect(g2); g2.connect(D); o.start(now); o.stop(now+0.08);
     } else if (type === 5) { // tom lo
-      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(140,now); osc.frequency.exponentialRampToValueAtTime(45,now+0.25);
-      g=ctx.createGain(); g.gain.setValueAtTime(0.8,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.25);
-      osc.connect(g); g.connect(dest); osc.start(now); osc.stop(now+0.25);
+      o=ctx.createOscillator(); o.frequency.setValueAtTime(140,now); o.frequency.exponentialRampToValueAtTime(45,now+0.2);
+      g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
+      o.connect(g); g.connect(D); o.start(now); o.stop(now+0.21);
     } else { // kick
-      osc=ctx.createOscillator(); osc.frequency.setValueAtTime(180,now); osc.frequency.exponentialRampToValueAtTime(25,now+0.18);
-      g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.25);
-      osc.connect(g); g.connect(dest); osc.start(now); osc.stop(now+0.25);
-      noise = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.03, ctx.sampleRate); data = buf.getChannelData(0);
-      for (var i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,8)*0.5;
-      noise.buffer=buf; g2=ctx.createGain(); g2.gain.setValueAtTime(0.5,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.03);
-      noise.connect(g2); g2.connect(dest); noise.start(now);
+      o=ctx.createOscillator(); o.frequency.setValueAtTime(160,now); o.frequency.exponentialRampToValueAtTime(30,now+0.15);
+      g=ctx.createGain(); g.gain.setValueAtTime(1.0,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
+      o.connect(g); g.connect(D); o.start(now); o.stop(now+0.21);
+      n = ctx.createBufferSource(); buf = ctx.createBuffer(1, ctx.sampleRate*0.02|0, ctx.sampleRate); d = buf.getChannelData(0);
+      for (var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,8)*0.5;
+      n.buffer=buf; g2=ctx.createGain(); g2.gain.setValueAtTime(0.5,now); g2.gain.exponentialRampToValueAtTime(0.001,now+0.02);
+      n.connect(g2); g2.connect(D); n.start(now);
     }
   }
 
-  // ==== BACKING TRACK ENGINE (bass + distorted guitar, NO drums) ====
-  var backingNodes = [];
+  // ==== BACKING TRACK ENGINE ====
+  // Schedules only 2 measures ahead at a time (iOS-friendly, <50 nodes at once)
   var backingTimer = null;
+  var backingMeasure = 0;
+  var backingStartTime = 0;
+  var backingSongIdx = 0;
 
-  function stopBacking() {
-    for (var i=0; i<backingNodes.length; i++) { try{backingNodes[i].stop();}catch(e){} try{backingNodes[i].disconnect();}catch(e){} }
-    backingNodes = [];
-    if (backingTimer) { clearInterval(backingTimer); backingTimer = null; }
-  }
-
-  var NF = { // note frequencies
+  var NF = {
     'C2':65.41,'D2':73.42,'E2':82.41,'F2':87.31,'G2':98,'A2':110,'B2':123.47,
     'C3':130.81,'D3':146.83,'E3':164.81,'F3':174.61,'G3':196,'A3':220,'B3':246.94,
     'C4':261.63,'D4':293.66,'E4':329.63,'F4':349.23,'G4':392,'A4':440,'B4':493.88,
@@ -252,69 +253,79 @@
     'Db4':277.18,'Eb4':311.13,'Gb4':369.99,'Ab4':415.30,'Bb4':466.16
   };
 
-  function schedBass(ctx, freq, start, dur) {
-    var osc = ctx.createOscillator(); osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(freq, start);
-    var g = ctx.createGain();
-    g.gain.setValueAtTime(0.22, start);
-    g.gain.setValueAtTime(0.22, start + dur * 0.7);
-    g.gain.linearRampToValueAtTime(0, start + dur);
-    var filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600;
-    osc.connect(filt); filt.connect(g); g.connect(ctx.destination);
-    osc.start(start); osc.stop(start + dur + 0.01);
-    backingNodes.push(osc);
+  // Shared waveshaper curve (create once)
+  var distCurve = new Float32Array(256);
+  for (var j=0;j<256;j++){var x=(j/128)-1; distCurve[j]=(Math.PI+4)*x/(Math.PI+4*Math.abs(x));}
+
+  function schedMeasure(ctx, song, mIdx, mStart) {
+    var beatDur = 60 / song.bpm;
+    var ch = song.chords[mIdx % song.chords.length];
+    var bassFreq = NF[ch.b] || 100;
+    var gFreqs = [];
+    for (var c=0; c<ch.g.length; c++) gFreqs.push(NF[ch.g[c]] || 300);
+
+    // Bass: 8th notes
+    for (var b=0; b<8; b++) {
+      var t = mStart + b * beatDur * 0.5;
+      var dur = beatDur * 0.4;
+      var osc = ctx.createOscillator(); osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(bassFreq, t);
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.2, t);
+      g.gain.linearRampToValueAtTime(0, t + dur);
+      var filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600;
+      osc.connect(filt); filt.connect(g); g.connect(ctx.destination);
+      osc.start(t); osc.stop(t + dur + 0.01);
+    }
+
+    // Guitar: quarter note power chords (simpler = fewer nodes)
+    for (var b=0; b<4; b++) {
+      var t = mStart + b * beatDur;
+      var dur = beatDur * 0.8;
+      for (var i=0; i<gFreqs.length; i++) {
+        var osc = ctx.createOscillator(); osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(gFreqs[i], t);
+        var ws = ctx.createWaveShaper(); ws.curve = distCurve;
+        var g = ctx.createGain();
+        g.gain.setValueAtTime(0.07, t);
+        g.gain.linearRampToValueAtTime(0, t + dur);
+        osc.connect(ws); ws.connect(g); g.connect(ctx.destination);
+        osc.start(t); osc.stop(t + dur + 0.01);
+      }
+    }
   }
 
-  function schedGuitar(ctx, freqs, start, dur) {
-    for (var i = 0; i < freqs.length; i++) {
-      var osc = ctx.createOscillator(); osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(freqs[i], start);
-      // Distortion via waveshaper
-      var ws = ctx.createWaveShaper();
-      var curve = new Float32Array(256);
-      for (var j=0; j<256; j++) { var x=(j/128)-1; curve[j]=(Math.PI+4)*x/(Math.PI+4*Math.abs(x)); }
-      ws.curve = curve;
-      var g = ctx.createGain();
-      g.gain.setValueAtTime(0.06, start);
-      g.gain.setValueAtTime(0.06, start + dur * 0.85);
-      g.gain.linearRampToValueAtTime(0, start + dur);
-      var filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 3000;
-      osc.connect(ws); ws.connect(filt); filt.connect(g); g.connect(ctx.destination);
-      osc.start(start); osc.stop(start + dur + 0.01);
-      backingNodes.push(osc);
-    }
+  function stopBacking() {
+    if (backingTimer) { clearInterval(backingTimer); backingTimer = null; }
   }
 
   function startBacking(songIdx) {
     stopBacking();
     var ctx = getCtx(); if (!ctx) return;
     var song = songs[songIdx];
-    var bpm = song.bpm;
-    var beatDur = 60 / bpm;
+    backingSongIdx = songIdx;
+    var beatDur = 60 / song.bpm;
     var measureDur = beatDur * 4;
-    var now = ctx.currentTime + 0.15;
-    var chords = song.chords;
-    // Schedule enough backing for the full song + loop buffer
-    var totalMeasures = Math.ceil((song.duration + 5000) / 1000 / measureDur);
+    backingStartTime = ctx.currentTime + 0.1;
+    backingMeasure = 0;
 
-    for (var m = 0; m < totalMeasures; m++) {
-      var ch = chords[m % chords.length];
-      var mStart = now + m * measureDur;
-      var bassFreq = NF[ch.b] || 100;
-      var gFreqs = [];
-      for (var c = 0; c < ch.g.length; c++) gFreqs.push(NF[ch.g[c]] || 300);
+    // Schedule first 2 measures immediately
+    schedMeasure(ctx, song, 0, backingStartTime);
+    schedMeasure(ctx, song, 1, backingStartTime + measureDur);
+    backingMeasure = 2;
 
-      // Bass: 8th note punk root
-      for (var b = 0; b < 8; b++) {
-        var t = mStart + b * beatDur * 0.5;
-        schedBass(ctx, bassFreq, t, beatDur * 0.45);
+    // Every 500ms, schedule the next measure if needed (lookahead)
+    backingTimer = setInterval(function() {
+      var ctx2 = getCtx(); if (!ctx2) return;
+      var now = ctx2.currentTime;
+      var mTime = backingStartTime + backingMeasure * measureDur;
+      // Schedule if the measure start is within 2 seconds from now
+      while (mTime - now < 2.0) {
+        schedMeasure(ctx2, song, backingMeasure, mTime);
+        backingMeasure++;
+        mTime = backingStartTime + backingMeasure * measureDur;
       }
-      // Guitar: downstrokes on beats + upstrokes on &'s
-      for (var b = 0; b < 4; b++) {
-        schedGuitar(ctx, gFreqs, mStart + b * beatDur, beatDur * 0.85);
-        schedGuitar(ctx, gFreqs, mStart + b * beatDur + beatDur * 0.5, beatDur * 0.3);
-      }
-    }
+    }, 500);
   }
 
   // ==== SONG DATA ====

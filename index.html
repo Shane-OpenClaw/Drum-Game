@@ -156,8 +156,27 @@ function dbg(msg) {
   if (dbgEl) dbgEl.textContent = msg;
 }
 
+// Force Safari into "playback" audio session (overrides silent switch)
+// Tiny WAV: 1 sample of silence, enough to flip the audio mode
+var silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+var audioUnlockEl = null;
+function unlockSilentSwitch() {
+  if (audioUnlockEl) return;
+  audioUnlockEl = document.createElement('audio');
+  audioUnlockEl.controls = false;
+  audioUnlockEl.preload = 'auto';
+  audioUnlockEl.loop = false;
+  audioUnlockEl.src = silentWav;
+  audioUnlockEl.play().then(function() {
+    dbg('Silent switch bypassed');
+  }).catch(function(e) {
+    dbg('Silent bypass err: ' + e.message);
+  });
+}
+
 // Create or get AudioContext — MUST be called in user gesture call stack
 function getCtx() {
+  unlockSilentSwitch(); // always try to bypass silent switch
   if (!actx) {
     try {
       var AC = window.AudioContext || window.webkitAudioContext;

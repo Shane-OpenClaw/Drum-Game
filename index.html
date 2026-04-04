@@ -68,6 +68,7 @@
     box-shadow:2px 2px 0 #fff;
   }
   #musicStatus { position:absolute; bottom:4px; right:8px; font-family:'Permanent Marker',cursive; font-size:2vw; color:#00ff88; }
+  #dbg { position:fixed; top:0; left:0; right:0; background:rgba(0,0,0,0.9); color:#0f0; font:12px monospace; padding:6px; z-index:9999; max-height:30vh; overflow-y:auto; }
 
   /* Drum kit */
   #drumKit {
@@ -96,6 +97,7 @@
 </style>
 </head>
 <body>
+<div id="dbg">Audio debug: tap anything...</div>
 
 <div id="menu">
   <div class="smiley">:)</div>
@@ -148,13 +150,28 @@ var backingTimer = null;
 var backingMeasure = 0;
 var backingStartTime = 0;
 var lastTap = 0;
+var dbgEl;
+function dbg(msg) {
+  if (!dbgEl) dbgEl = document.getElementById('dbg');
+  if (dbgEl) dbgEl.textContent = msg;
+}
 
 // Create or get AudioContext — MUST be called in user gesture call stack
 function getCtx() {
   if (!actx) {
-    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      actx = new AC();
+      dbg('AudioContext created: state=' + actx.state + ' sr=' + actx.sampleRate);
+    } catch(e) {
+      dbg('AudioContext FAILED: ' + e.message);
+      return null;
+    }
   }
-  if (actx.state === 'suspended') actx.resume();
+  if (actx.state === 'suspended') {
+    actx.resume();
+    dbg('AudioContext resumed: state=' + actx.state);
+  }
   return actx;
 }
 
@@ -167,7 +184,8 @@ function noDouble(e) {
 
 // ==== DRUM SOUNDS ====
 function playDrum(type) {
-  var ctx = getCtx(); if (!ctx) return;
+  var ctx = getCtx(); if (!ctx) { dbg('NO CTX for drum ' + type); return; }
+  dbg('DRUM ' + type + ' | ctx.state=' + ctx.state + ' time=' + ctx.currentTime.toFixed(2));
   var D = ctx.destination, now = ctx.currentTime, g, o, n, buf, d, f, g2;
 
   if (type === 0) { // crash
@@ -269,8 +287,7 @@ function schedMeasure(ctx, song, mIdx, mStart) {
 
 function stopBacking() {
   if (backingTimer) { clearInterval(backingTimer); backingTimer = null; }
-  // Kill AudioContext entirely to stop all scheduled nodes
-  if (actx) { try { actx.close(); } catch(e) {} actx = null; }
+  // DO NOT close AudioContext — drums need it to keep working
 }
 
 function startBacking(songIdx) {
@@ -287,9 +304,11 @@ function startBacking(songIdx) {
   schedMeasure(ctx, song, 1, backingStartTime + measureDur);
   backingMeasure = 2;
 
+  dbg('Backing started: bpm=' + song.bpm + ' measures scheduled=2');
+
   // Lookahead: schedule next measure every 500ms
   backingTimer = setInterval(function() {
-    if (!actx) return;
+    if (!actx || actx.state !== 'running') return;
     var now = actx.currentTime;
     var mTime = backingStartTime + backingMeasure * measureDur;
     while (mTime - now < 2.0) {

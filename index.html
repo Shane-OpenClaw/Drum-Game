@@ -116,7 +116,7 @@
     <strong>HOW TO PLAY:</strong><br>
     1. Pick a song & hit LET'S GO<br>
     2. Tap PLAY on the Apple Music player<br>
-    3. Tap SYNC when vocals start to line up the lyrics<br>
+    3. Lyrics auto-start (or tap SYNC to fine-tune)<br>
     4. YOU are Travis Barker — bring the beat! 🤘
   </div>
 </div>
@@ -510,6 +510,19 @@ var curSong = 0;
 var jamStart = 0;
 var jamRunning = false;
 var lyricIdx = 0;
+var awaitingPlay = false;
+
+// Auto-start lyric timer when user taps into Apple Music iframe to press play
+// (iframe focus steals window focus → window.onblur fires)
+window.addEventListener('blur', function() {
+  if (awaitingPlay && jamRunning) {
+    jamStart = Date.now();
+    lyricIdx = 0;
+    awaitingPlay = false;
+    var ms = document.getElementById('musicStatus');
+    if (ms) ms.textContent = '♪ PLAYING — DRUM ALONG!';
+  }
+});
 
 // ==== UI ====
 function amURL(song) {
@@ -542,9 +555,10 @@ function startJam(e) {
   startBacking(curSong);
   loadEmbed(curSong);
   document.getElementById('songName').textContent = songs[curSong].name;
-  document.getElementById('musicStatus').textContent = '▶ TAP PLAY ON APPLE MUSIC, THEN DRUM!';
+  document.getElementById('musicStatus').textContent = '▶ TAP PLAY — LYRICS WILL AUTO-START';
   lyricIdx = 0;
-  jamStart = Date.now();
+  jamStart = Date.now() + 999999; // park timer until play detected
+  awaitingPlay = true;
   jamRunning = true;
   document.getElementById('menu').style.display = 'none';
   document.getElementById('playScreen').style.display = 'flex';
@@ -555,6 +569,9 @@ function syncLyrics(e) {
   if (!noDouble(e)) return;
   jamStart = Date.now();
   lyricIdx = 0;
+  awaitingPlay = false;
+  var ms = document.getElementById('musicStatus');
+  if (ms) ms.textContent = '♪ PLAYING — DRUM ALONG!';
 }
 
 function restartSong(e) {
@@ -563,8 +580,10 @@ function restartSong(e) {
   var ctx = getCtx();
   if (ctx) ctx.resume();
   loadEmbed(curSong); // reload iframe → restarts track from beginning
-  jamStart = Date.now();
+  jamStart = Date.now() + 999999;
+  awaitingPlay = true;
   lyricIdx = 0;
+  document.getElementById('musicStatus').textContent = '▶ TAP PLAY — LYRICS WILL AUTO-START';
   playDrum(0);
 }
 

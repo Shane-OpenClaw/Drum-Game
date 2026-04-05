@@ -58,6 +58,7 @@
     padding:8px 50px 8px 12px;
   }
   #songName { font-family:'Permanent Marker',cursive; font-size:3vw; color:#ff1493; text-shadow:0 0 10px #ff149366; }
+  #amEmbed { width:100%; max-width:500px; height:84px; border-radius:8px; margin:6px auto; display:block; background:#000; }
   #lyricLine { font-family:'Permanent Marker',cursive; font-size:4.5vw; color:#fff; min-height:2em; line-height:1.3; margin-top:4px; transition:opacity 0.2s; }
   #lyricNext { font-size:2.5vw; color:#555; min-height:1.2em; margin-top:2px; }
   #topBtns { position:absolute; top:6px; right:8px; display:flex; gap:6px; }
@@ -113,9 +114,9 @@
   <div class="instructions">
     <strong>HOW TO PLAY:</strong><br>
     1. Pick a song & hit LET'S GO<br>
-    2. Bass + guitar will play — NO DRUMS<br>
+    2. Tap PLAY on the Apple Music player<br>
     3. YOU are Travis Barker — bring the beat!<br>
-    4. Lyrics scroll so you know where you are 🤘
+    4. Lyrics scroll along so you can follow 🤘
   </div>
 </div>
 
@@ -126,6 +127,7 @@
       <button class="top-btn" ontouchstart="goBack(event)" onclick="goBack(event)">🎵 PICK SONG</button>
     </div>
     <div id="songName"></div>
+    <iframe id="amEmbed" allow="autoplay *; encrypted-media *; fullscreen *" frameborder="0" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="about:blank"></iframe>
     <div id="lyricLine"></div>
     <div id="lyricNext"></div>
     <div id="musicStatus"></div>
@@ -354,41 +356,13 @@ function stopBacking() {
 }
 
 function startBacking(songIdx) {
+  // Synth backing disabled — Apple Music iframe provides the backing track
   stopBacking();
-  var ctx = getCtx(); if (!ctx) return;
-  // Create fresh master bus for this playback
-  backingBus = ctx.createGain();
-  backingBus.gain.value = 1.0;
-  backingBus.connect(ctx.destination);
-  var song = songs[songIdx];
-  var beatDur = 60 / song.bpm;
-  var measureDur = beatDur * 4;
-  backingStartTime = ctx.currentTime + 0.1;
-  backingMeasure = 0;
-
-  // Schedule first 2 measures immediately
-  schedMeasure(ctx, song, 0, backingStartTime);
-  schedMeasure(ctx, song, 1, backingStartTime + measureDur);
-  backingMeasure = 2;
-
-  dbg('Backing started: bpm=' + song.bpm + ' measures scheduled=2');
-
-  // Lookahead: schedule next measure every 500ms
-  backingTimer = setInterval(function() {
-    if (!actx || actx.state !== 'running') return;
-    var now = actx.currentTime;
-    var mTime = backingStartTime + backingMeasure * measureDur;
-    while (mTime - now < 2.0) {
-      schedMeasure(actx, song, backingMeasure, mTime);
-      backingMeasure++;
-      mTime = backingStartTime + backingMeasure * measureDur;
-    }
-  }, 500);
 }
 
   // ==== SONG DATA ====
   var songs = [
-    { name: "ALL THE SMALL THINGS", bpm: 148, duration: 82000,
+    { name: "ALL THE SMALL THINGS", bpm: 148, duration: 82000, am: {coll:1440839912, track:1440840510},
       chords: [
         {b:'C3',g:['C4','E4','G4']},{b:'G2',g:['G3','B3','D4']},{b:'F2',g:['F3','A3','C4']},{b:'G2',g:['G3','B3','D4']}
       ],
@@ -422,7 +396,7 @@ function startBacking(songIdx) {
         [80000,""]
       ]
     },
-    { name: "WHAT'S MY AGE AGAIN?", bpm: 160, duration: 68000,
+    { name: "WHAT'S MY AGE AGAIN?", bpm: 160, duration: 68000, am: {coll:1444118632, track:1444118643},
       chords: [
         {b:'Gb2',g:['Gb3','Bb3','Db4']},{b:'D2',g:['D3','Gb3','A3']},{b:'A2',g:['A3','Db4','E4']},{b:'E2',g:['E3','Ab3','B3']}
       ],
@@ -451,7 +425,7 @@ function startBacking(songIdx) {
         [68000,""]
       ]
     },
-    { name: "DAMMIT", bpm: 215, duration: 54000,
+    { name: "DAMMIT", bpm: 215, duration: 54000, am: {coll:1531763437, track:1531763457},
       chords: [
         {b:'C3',g:['C4','E4','G4']},{b:'G2',g:['G3','B3','D4']},{b:'A2',g:['A3','Db4','E4']},{b:'F2',g:['F3','A3','C4']}
       ],
@@ -477,7 +451,7 @@ function startBacking(songIdx) {
         [54000,""]
       ]
     },
-    { name: "FEELING THIS", bpm: 170, duration: 60000,
+    { name: "FEELING THIS", bpm: 170, duration: 60000, am: {coll:1442997224, track:1442997227},
       chords: [
         {b:'A2',g:['A3','Db4','E4']},{b:'D2',g:['D3','Gb3','A3']},{b:'A2',g:['A3','Db4','E4']},{b:'E2',g:['E3','Ab3','B3']}
       ],
@@ -505,7 +479,7 @@ function startBacking(songIdx) {
         [60000,""]
       ]
     },
-    { name: "ONE MORE TIME", bpm: 138, duration: 65000,
+    { name: "ONE MORE TIME", bpm: 138, duration: 65000, am: {coll:1707257664, track:1707258049},
       chords: [
         {b:'G2',g:['G3','B3','D4']},{b:'D2',g:['D3','Gb3','A3']},{b:'E2',g:['E3','G3','B3']},{b:'C3',g:['C4','E4','G4']}
       ],
@@ -536,6 +510,17 @@ var jamRunning = false;
 var lyricIdx = 0;
 
 // ==== UI ====
+function amURL(song) {
+  return 'https://embed.music.apple.com/us/album/' + song.am.coll + '?i=' + song.am.track + '&theme=dark';
+}
+function loadEmbed(idx) {
+  var f = document.getElementById('amEmbed');
+  if (f) f.src = amURL(songs[idx]);
+}
+function clearEmbed() {
+  var f = document.getElementById('amEmbed');
+  if (f) f.src = 'about:blank';
+}
 function pickSong(e, idx) {
   if (!noDouble(e)) return;
   getCtx(); // create AudioContext on first interaction
@@ -553,8 +538,9 @@ function startJam(e) {
   if (ctx) ctx.resume();
   playDrum(0); // audible crash to confirm audio works
   startBacking(curSong);
+  loadEmbed(curSong);
   document.getElementById('songName').textContent = songs[curSong].name;
-  document.getElementById('musicStatus').textContent = '♪ BASS + GUITAR — YOU BRING THE DRUMS!';
+  document.getElementById('musicStatus').textContent = '▶ TAP PLAY ON APPLE MUSIC, THEN DRUM!';
   lyricIdx = 0;
   jamStart = Date.now();
   jamRunning = true;
@@ -568,7 +554,7 @@ function restartSong(e) {
   stopBacking();
   var ctx = getCtx();
   if (ctx) ctx.resume();
-  startBacking(curSong);
+  loadEmbed(curSong); // reload iframe → restarts track from beginning
   jamStart = Date.now();
   lyricIdx = 0;
   playDrum(0);
@@ -578,6 +564,7 @@ function goBack(e) {
   if (!noDouble(e)) return;
   jamRunning = false;
   stopBacking();
+  clearEmbed();
   document.getElementById('playScreen').style.display = 'none';
   document.getElementById('menu').style.display = 'flex';
 }
@@ -590,10 +577,7 @@ function updateLyrics() {
   document.getElementById('lyricLine').textContent = lyr[lyricIdx][1];
   var next = (lyricIdx + 1 < lyr.length && lyr[lyricIdx+1][1]) ? lyr[lyricIdx+1][1] : '';
   document.getElementById('lyricNext').textContent = next;
-  if (lyricIdx >= lyr.length - 1 && elapsed > lyr[lyr.length-1][0] + 3000) {
-    stopBacking(); startBacking(curSong);
-    jamStart = Date.now(); lyricIdx = 0;
-  }
+  // Lyrics no longer auto-loop; Apple Music controls the track
   requestAnimationFrame(updateLyrics);
 }
 

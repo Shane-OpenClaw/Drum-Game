@@ -147,6 +147,7 @@ var actx = null;
 var backingTimer = null;
 var backingMeasure = 0;
 var backingStartTime = 0;
+var backingBus = null;
 var lastTap = 0;
 function dbg(msg) { /* debug removed */ }
 
@@ -269,6 +270,7 @@ var distCurve = new Float32Array(256);
 for (var j=0;j<256;j++){var x=(j/128)-1; distCurve[j]=(Math.PI+4)*x/(Math.PI+4*Math.abs(x));}
 
 function schedMeasure(ctx, song, mIdx, mStart) {
+  var bus = backingBus || ctx.destination;
   var beatDur = 60 / song.bpm;
   var ch = song.chords[mIdx % song.chords.length];
   var bassFreq = NF[ch.b] || 100;
@@ -285,7 +287,7 @@ function schedMeasure(ctx, song, mIdx, mStart) {
     g.gain.setValueAtTime(0.2, t);
     g.gain.linearRampToValueAtTime(0, t + dur);
     var filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600;
-    osc.connect(filt); filt.connect(g); g.connect(ctx.destination);
+    osc.connect(filt); filt.connect(g); g.connect(bus);
     osc.start(t); osc.stop(t + dur + 0.01);
   }
 
@@ -300,20 +302,64 @@ function schedMeasure(ctx, song, mIdx, mStart) {
       var g = ctx.createGain();
       g.gain.setValueAtTime(0.07, t);
       g.gain.linearRampToValueAtTime(0, t + dur);
-      osc.connect(ws); ws.connect(g); g.connect(ctx.destination);
+      osc.connect(ws); ws.connect(g); g.connect(bus);
       osc.start(t); osc.stop(t + dur + 0.01);
     }
+  }
+
+  // Vocal synth: melody line following chord tones, octave up, with vibrato
+  // Pattern per measure: root, fifth, third, fifth (half-notes on beats 1,2,3,4)
+  var melodyPattern = [gFreqs[0], gFreqs[2], gFreqs[1], gFreqs[2]];
+  for (var b=0; b<4; b++) {
+    var t = mStart + b * beatDur;
+    var dur = beatDur * 0.85;
+    var f0 = melodyPattern[b] * 2; // octave up into vocal range
+    // Triangle oscillator with bandpass filter for formant-ish "aah" vowel
+    var vOsc = ctx.createOscillator(); vOsc.type = 'triangle';
+    vOsc.frequency.setValueAtTime(f0, t);
+    // Vibrato LFO
+    var lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 5.5;
+    var lfoGain = ctx.createGain(); lfoGain.gain.value = f0 * 0.015;
+    lfo.connect(lfoGain); lfoGain.connect(vOsc.frequency);
+    // Formant filter
+    var bp = ctx.createBiquadFilter(); bp.type = 'bandpass';
+    bp.frequency.value = 900; bp.Q.value = 4;
+    // Envelope
+    var vg = ctx.createGain();
+    vg.gain.setValueAtTime(0.0001, t);
+    vg.gain.exponentialRampToValueAtTime(0.14, t + 0.04);
+    vg.gain.setValueAtTime(0.14, t + dur * 0.7);
+    vg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    vOsc.connect(bp); bp.connect(vg); vg.connect(bus);
+    vOsc.start(t); vOsc.stop(t + dur + 0.02);
+    lfo.start(t); lfo.stop(t + dur + 0.02);
   }
 }
 
 function stopBacking() {
   if (backingTimer) { clearInterval(backingTimer); backingTimer = null; }
+  // Hard-cut all scheduled audio by ramping bus to 0 and disconnecting
+  if (backingBus && actx) {
+    try {
+      var now = actx.currentTime;
+      backingBus.gain.cancelScheduledValues(now);
+      backingBus.gain.setValueAtTime(backingBus.gain.value, now);
+      backingBus.gain.linearRampToValueAtTime(0, now + 0.03);
+      var oldBus = backingBus;
+      setTimeout(function(){ try { oldBus.disconnect(); } catch(e){} }, 80);
+    } catch(e) {}
+    backingBus = null;
+  }
   // DO NOT close AudioContext — drums need it to keep working
 }
 
 function startBacking(songIdx) {
   stopBacking();
   var ctx = getCtx(); if (!ctx) return;
+  // Create fresh master bus for this playback
+  backingBus = ctx.createGain();
+  backingBus.gain.value = 1.0;
+  backingBus.connect(ctx.destination);
   var song = songs[songIdx];
   var beatDur = 60 / song.bpm;
   var measureDur = beatDur * 4;

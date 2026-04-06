@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>DRUM LIKE BARKER</title>
+<script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" data-web-components async></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -51,14 +52,14 @@
 
   /* Top bar: lyrics + controls */
   #topBar {
-    height:auto; min-height:200px; position:relative;
+    height:auto; min-height:120px; position:relative;
     background:linear-gradient(to bottom,#111,#000);
     border-bottom:2px solid #ff1493;
     display:flex; flex-direction:column;
-    padding:52px 12px 8px 12px;
+    padding:44px 12px 8px 12px;
   }
   #songName { font-family:'Permanent Marker',cursive; font-size:3vw; color:#ff1493; text-shadow:0 0 10px #ff149366; }
-  #amEmbed { width:100%; max-width:500px; height:84px; border-radius:8px; margin:6px auto; display:block; background:#000; }
+  #mkStatus { font-family:'Permanent Marker',cursive; font-size:2.5vw; color:#00ff88; text-align:center; margin:4px 0; }
   #lyricLine { font-family:'Permanent Marker',cursive; font-size:4.5vw; color:#fff; min-height:2em; line-height:1.3; margin-top:4px; transition:opacity 0.2s; }
   #lyricNext { font-size:2.5vw; color:#555; min-height:1.2em; margin-top:2px; }
   #topBtns { position:absolute; top:6px; right:8px; display:flex; gap:6px; z-index:10; }
@@ -115,9 +116,9 @@
   <div class="instructions">
     <strong>HOW TO PLAY:</strong><br>
     1. Pick a song & hit LET'S GO<br>
-    2. Tap PLAY on the Apple Music player<br>
-    3. Lyrics auto-start (or tap SYNC to fine-tune)<br>
-    4. YOU are Travis Barker — bring the beat! 🤘
+    2. The real track plays automatically<br>
+    3. YOU are Travis Barker — bring the beat!<br>
+    4. Use SYNC if lyrics drift 🤘
   </div>
 </div>
 
@@ -129,7 +130,7 @@
       <button class="top-btn" ontouchstart="goBack(event)" onclick="goBack(event)">🎵 PICK SONG</button>
     </div>
     <div id="songName"></div>
-    <iframe id="amEmbed" allow="autoplay *; encrypted-media *; fullscreen *" frameborder="0" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="about:blank"></iframe>
+    <div id="mkStatus"></div>
     <div id="lyricLine"></div>
     <div id="lyricNext"></div>
     <div id="musicStatus"></div>
@@ -153,6 +154,8 @@ var backingMeasure = 0;
 var backingStartTime = 0;
 var backingBus = null;
 var lastTap = 0;
+var mkInstance = null;
+var mkReady = false;
 function dbg(msg) { /* debug removed */ }
 
 // Force Safari "playback" audio session (overrides silent switch on iOS)
@@ -512,29 +515,44 @@ var jamRunning = false;
 var lyricIdx = 0;
 var awaitingPlay = false;
 
-// Auto-start lyric timer when user taps into Apple Music iframe to press play
-// (iframe focus steals window focus → window.onblur fires)
-window.addEventListener('blur', function() {
-  if (awaitingPlay && jamRunning) {
+// ==== UI ====
+// ==== MUSICKIT INIT ====
+var MK_TOKEN = 'eyJhbGciOiJFUzI1NiIsImtpZCI6IkczVlM0Mzg0UTYifQ.eyJpc3MiOiI5RlY3SDVTOEg2IiwiaWF0IjoxNzc1NTA1ODk5LCJleHAiOjE3OTEwNTc4OTl9.PEo8K8aobTS9ENfAh7KXkz-3Y5an3Lc_XPhYF7KQz2z0mXIuAy5zyEXIgMZ-F-ZIIF8SVeA70sMUS8l3izhDVg';
+
+function initMusicKit() {
+  if (mkInstance) return Promise.resolve(mkInstance);
+  return MusicKit.configure({
+    developerToken: MK_TOKEN,
+    app: { name: 'Drum Like Barker', build: '1.0' }
+  }).then(function() {
+    mkInstance = MusicKit.getInstance();
+    mkReady = true;
+    return mkInstance;
+  });
+}
+
+function mkPlay(song) {
+  var st = document.getElementById('mkStatus');
+  if (st) st.textContent = 'Loading track...';
+  return initMusicKit().then(function(mk) {
+    return mk.setQueue({ song: String(song.am.track) });
+  }).then(function() {
+    if (st) st.textContent = '♪ PLAYING — DRUM ALONG!';
+    return mkInstance.play();
+  }).then(function() {
+    // Auto-start lyrics when playback actually begins
     jamStart = Date.now();
     lyricIdx = 0;
     awaitingPlay = false;
-    var ms = document.getElementById('musicStatus');
-    if (ms) ms.textContent = '♪ PLAYING — DRUM ALONG!';
-  }
-});
+  }).catch(function(err) {
+    if (st) st.textContent = 'Music error: ' + err.message;
+  });
+}
 
-// ==== UI ====
-function amURL(song) {
-  return 'https://embed.music.apple.com/us/album/' + song.am.coll + '?i=' + song.am.track + '&theme=dark';
-}
-function loadEmbed(idx) {
-  var f = document.getElementById('amEmbed');
-  if (f) f.src = amURL(songs[idx]);
-}
-function clearEmbed() {
-  var f = document.getElementById('amEmbed');
-  if (f) f.src = 'about:blank';
+function mkStop() {
+  if (mkInstance) {
+    try { mkInstance.stop(); } catch(e) {}
+  }
 }
 function pickSong(e, idx) {
   if (!noDouble(e)) return;
@@ -548,21 +566,19 @@ function pickSong(e, idx) {
 
 function startJam(e) {
   if (!noDouble(e)) return;
-  // Create AudioContext RIGHT HERE in touch handler call stack
   var ctx = getCtx();
   if (ctx) ctx.resume();
-  playDrum(0); // audible crash to confirm audio works
-  startBacking(curSong);
-  loadEmbed(curSong);
+  playDrum(0);
   document.getElementById('songName').textContent = songs[curSong].name;
-  document.getElementById('musicStatus').textContent = '▶ TAP PLAY — LYRICS WILL AUTO-START';
+  document.getElementById('musicStatus').textContent = '';
   lyricIdx = 0;
-  jamStart = Date.now() + 999999; // park timer until play detected
+  jamStart = Date.now() + 999999;
   awaitingPlay = true;
   jamRunning = true;
   document.getElementById('menu').style.display = 'none';
   document.getElementById('playScreen').style.display = 'flex';
   updateLyrics();
+  mkPlay(songs[curSong]);
 }
 
 function syncLyrics(e) {
@@ -577,21 +593,21 @@ function syncLyrics(e) {
 function restartSong(e) {
   if (!noDouble(e)) return;
   stopBacking();
+  mkStop();
   var ctx = getCtx();
   if (ctx) ctx.resume();
-  loadEmbed(curSong); // reload iframe → restarts track from beginning
   jamStart = Date.now() + 999999;
   awaitingPlay = true;
   lyricIdx = 0;
-  document.getElementById('musicStatus').textContent = '▶ TAP PLAY — LYRICS WILL AUTO-START';
   playDrum(0);
+  mkPlay(songs[curSong]);
 }
 
 function goBack(e) {
   if (!noDouble(e)) return;
   jamRunning = false;
   stopBacking();
-  clearEmbed();
+  mkStop();
   document.getElementById('playScreen').style.display = 'none';
   document.getElementById('menu').style.display = 'flex';
 }

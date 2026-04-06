@@ -535,17 +535,24 @@ function mkPlay(song) {
   var st = document.getElementById('mkStatus');
   if (st) st.textContent = 'Loading track...';
   return initMusicKit().then(function(mk) {
+    // Must authorize (Apple Music sign-in) before playback works
+    if (!mk.isAuthorized) {
+      if (st) st.textContent = 'Sign into Apple Music...';
+      return mk.authorize().then(function() { return mk; });
+    }
+    return mk;
+  }).then(function(mk) {
+    if (st) st.textContent = 'Loading track...';
     return mk.setQueue({ song: String(song.am.track) });
   }).then(function() {
     if (st) st.textContent = '♪ PLAYING — DRUM ALONG!';
     return mkInstance.play();
   }).then(function() {
-    // Auto-start lyrics when playback actually begins
     jamStart = Date.now();
     lyricIdx = 0;
     awaitingPlay = false;
   }).catch(function(err) {
-    if (st) st.textContent = 'Music error: ' + err.message;
+    if (st) st.textContent = 'Error: ' + err.message;
   });
 }
 

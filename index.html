@@ -217,7 +217,7 @@ function getDrumBus() {
   var ctx = getCtx(); if (!ctx) return null;
   if (!drumBus) {
     drumBus = ctx.createGain();
-    drumBus.gain.value = 3.0; // 3x boost over music
+    drumBus.gain.value = 5.0; // 5x boost over music
     drumBus.connect(ctx.destination);
   }
   return drumBus;

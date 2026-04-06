@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>DRUM LIKE BARKER</title>
-<script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" data-web-components async></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -154,8 +153,6 @@ var backingMeasure = 0;
 var backingStartTime = 0;
 var backingBus = null;
 var lastTap = 0;
-var mkInstance = null;
-var mkReady = false;
 function dbg(msg) { /* debug removed */ }
 
 // Force Safari "playback" audio session (overrides silent switch on iOS)
@@ -377,7 +374,7 @@ function startBacking(songIdx) {
 
   // ==== SONG DATA ====
   var songs = [
-    { name: "ALL THE SMALL THINGS", bpm: 148, duration: 82000, am: {coll:1440839912, track:1440840510},
+    { name: "ALL THE SMALL THINGS", bpm: 148, duration: 82000, file: "atst.mp3", am: {coll:1440839912, track:1440840510},
       chords: [
         {b:'C3',g:['C4','E4','G4']},{b:'G2',g:['G3','B3','D4']},{b:'F2',g:['F3','A3','C4']},{b:'G2',g:['G3','B3','D4']}
       ],
@@ -411,7 +408,7 @@ function startBacking(songIdx) {
         [157500,""]
       ]
     },
-    { name: "WHAT'S MY AGE AGAIN?", bpm: 160, duration: 68000, am: {coll:1444118632, track:1444118643},
+    { name: "WHAT'S MY AGE AGAIN?", bpm: 160, duration: 68000, file: "wmaa.mp3", am: {coll:1444118632, track:1444118643},
       chords: [
         {b:'Gb2',g:['Gb3','Bb3','Db4']},{b:'D2',g:['D3','Gb3','A3']},{b:'A2',g:['A3','Db4','E4']},{b:'E2',g:['E3','Ab3','B3']}
       ],
@@ -450,7 +447,7 @@ function startBacking(songIdx) {
         [134500,""]
       ]
     },
-    { name: "DAMMIT", bpm: 215, duration: 54000, am: {coll:1531763437, track:1531763457},
+    { name: "DAMMIT", bpm: 215, duration: 54000, file: "dammit.mp3", am: {coll:1531763437, track:1531763457},
       chords: [
         {b:'C3',g:['C4','E4','G4']},{b:'G2',g:['G3','B3','D4']},{b:'A2',g:['A3','Db4','E4']},{b:'F2',g:['F3','A3','C4']}
       ],
@@ -485,7 +482,7 @@ function startBacking(songIdx) {
         [154500,""]
       ]
     },
-    { name: "FEELING THIS", bpm: 170, duration: 60000, am: {coll:1442997224, track:1442997227},
+    { name: "FEELING THIS", bpm: 170, duration: 60000, file: "feeling.mp3", am: {coll:1442997224, track:1442997227},
       chords: [
         {b:'A2',g:['A3','Db4','E4']},{b:'D2',g:['D3','Gb3','A3']},{b:'A2',g:['A3','Db4','E4']},{b:'E2',g:['E3','Ab3','B3']}
       ],
@@ -523,7 +520,7 @@ function startBacking(songIdx) {
         [165500,""]
       ]
     },
-    { name: "ONE MORE TIME", bpm: 138, duration: 65000, am: {coll:1707257664, track:1707258049},
+    { name: "ONE MORE TIME", bpm: 138, duration: 65000, file: "omt.mp3", am: {coll:1707257664, track:1707258049},
       chords: [
         {b:'G2',g:['G3','B3','D4']},{b:'D2',g:['D3','Gb3','A3']},{b:'E2',g:['E3','G3','B3']},{b:'C3',g:['C4','E4','G4']}
       ],
@@ -572,169 +569,34 @@ var lyricIdx = 0;
 var awaitingPlay = false;
 
 // ==== UI ====
-// ==== MUSICKIT INIT ====
-var MK_TOKEN = 'eyJhbGciOiJFUzI1NiIsImtpZCI6IkczVlM0Mzg0UTYifQ.eyJpc3MiOiI5RlY3SDVTOEg2IiwiaWF0IjoxNzc1NTA1ODk5LCJleHAiOjE3OTEwNTc4OTl9.PEo8K8aobTS9ENfAh7KXkz-3Y5an3Lc_XPhYF7KQz2z0mXIuAy5zyEXIgMZ-F-ZIIF8SVeA70sMUS8l3izhDVg';
+// ==== DRUMLESS TRACK PLAYER ====
+var trackAudio = null;
 
-function initMusicKit() {
-  if (mkInstance) return Promise.resolve(mkInstance);
-  try {
-    var p = MusicKit.configure({
-      developerToken: MK_TOKEN,
-      app: { name: 'Drum Like Barker', build: '1.0' }
-    });
-    // v3 configure may return promise or instance
-    if (p && typeof p.then === 'function') {
-      return p.then(function() {
-        mkInstance = MusicKit.getInstance();
-        mkReady = true;
-        return mkInstance;
-      });
-    } else {
-      mkInstance = MusicKit.getInstance();
-      mkReady = true;
-      return Promise.resolve(mkInstance);
-    }
-  } catch(e) {
-    // Already configured — just get instance
-    mkInstance = MusicKit.getInstance();
-    mkReady = true;
-    return Promise.resolve(mkInstance);
-  }
-}
-
-// ==== DRUM-REDUCTION EQ ====
-// Intercept MusicKit's audio element and route through filters
-// that cut drum frequencies while preserving vocals
-var mkAudioTapped = false;
-var mkEqChain = null;
-
-function tapMusicKitAudio() {
-  if (mkAudioTapped) return;
-  var ctx = getCtx(); if (!ctx) return;
-
-  // MusicKit creates an <audio> element — find it
-  var els = document.querySelectorAll('audio');
-  var target = null;
-  for (var i = 0; i < els.length; i++) {
-    // Skip our silent-switch audio
-    if (els[i] === audioEl) continue;
-    target = els[i];
-    break;
-  }
-  if (!target) {
-    // Also check for video elements (some MusicKit versions use <video>)
-    var vels = document.querySelectorAll('video');
-    if (vels.length > 0) target = vels[0];
-  }
-  if (!target) return;
-
-  try {
-    var src = ctx.createMediaElementSource(target);
-
-    // Cut kick drum (sub bass): low-shelf cut below 100Hz
-    var kickCut = ctx.createBiquadFilter();
-    kickCut.type = 'lowshelf';
-    kickCut.frequency.value = 100;
-    kickCut.gain.value = -12; // -12dB cut
-
-    // Cut snare body: notch around 250Hz
-    var snareCut = ctx.createBiquadFilter();
-    snareCut.type = 'peaking';
-    snareCut.frequency.value = 250;
-    snareCut.Q.value = 1.5;
-    snareCut.gain.value = -10;
-
-    // Cut snare crack / hi-hat: cut around 3-5kHz
-    var crackCut = ctx.createBiquadFilter();
-    crackCut.type = 'peaking';
-    crackCut.frequency.value = 4000;
-    crackCut.Q.value = 1.0;
-    crackCut.gain.value = -10;
-
-    // Cut cymbals: high-shelf cut above 8kHz
-    var cymCut = ctx.createBiquadFilter();
-    cymCut.type = 'highshelf';
-    cymCut.frequency.value = 8000;
-    cymCut.gain.value = -14;
-
-    // Boost vocal presence: 800Hz-2kHz
-    var voxBoost = ctx.createBiquadFilter();
-    voxBoost.type = 'peaking';
-    voxBoost.frequency.value = 1200;
-    voxBoost.Q.value = 0.8;
-    voxBoost.gain.value = 4;
-
-    // Overall music volume control
-    var mkGain = ctx.createGain();
-    mkGain.gain.value = 0.6; // lower music vs drums
-
-    src.connect(kickCut);
-    kickCut.connect(snareCut);
-    snareCut.connect(crackCut);
-    crackCut.connect(cymCut);
-    cymCut.connect(voxBoost);
-    voxBoost.connect(mkGain);
-    mkGain.connect(ctx.destination);
-
-    mkAudioTapped = true;
-    mkEqChain = { src: src, gain: mkGain, filters: [kickCut, snareCut, crackCut, cymCut, voxBoost] };
-  } catch(e) {
-    // createMediaElementSource can only be called once per element
-    // or CORS may block it — silently fall back to normal playback
-  }
-}
-
-// Watch for MusicKit audio elements appearing in the DOM
-var mkObserver = new MutationObserver(function(mutations) {
-  if (mkAudioTapped) return;
-  for (var i = 0; i < mutations.length; i++) {
-    for (var j = 0; j < mutations[i].addedNodes.length; j++) {
-      var node = mutations[i].addedNodes[j];
-      if (node.tagName === 'AUDIO' || node.tagName === 'VIDEO') {
-        // Short delay to let MusicKit finish setting up the element
-        setTimeout(tapMusicKitAudio, 200);
-        return;
-      }
-    }
-  }
-});
-mkObserver.observe(document.documentElement, { childList: true, subtree: true });
-
-function mkPlay(song) {
+function playTrack(song) {
   var st = document.getElementById('mkStatus');
-  if (st) st.textContent = 'Initializing...';
-  return initMusicKit().then(function(mk) {
-    if (st) st.textContent = 'MusicKit ready (auth=' + mk.isAuthorized + ')';
-    if (!mk.isAuthorized) {
-      if (st) st.textContent = 'Sign into Apple Music...';
-      return mk.authorize().then(function() {
-        if (st) st.textContent = 'Authorized!';
-        return mk;
-      });
-    }
-    return mk;
-  }).then(function(mk) {
-    if (st) st.textContent = 'Loading track ' + song.am.track + '...';
-    return mk.setQueue({ song: String(song.am.track) }).then(function() { return mk; });
-  }).then(function(mk) {
-    // Try to tap the audio element before playing
-    setTimeout(tapMusicKitAudio, 100);
+  if (st) st.textContent = 'Loading...';
+  stopTrack();
+  trackAudio = new Audio(song.file);
+  trackAudio.preload = 'auto';
+  trackAudio.addEventListener('canplaythrough', function() {
     if (st) st.textContent = '♪ PLAYING — DRUM ALONG!';
-    return mk.play();
-  }).then(function() {
-    // Try again after playback starts
-    setTimeout(tapMusicKitAudio, 500);
-    jamStart = Date.now();
-    lyricIdx = 0;
-    awaitingPlay = false;
-  }).catch(function(err) {
-    if (st) st.textContent = 'ERR: ' + (err.message || err);
+    trackAudio.play().then(function() {
+      jamStart = Date.now();
+      lyricIdx = 0;
+      awaitingPlay = false;
+    }).catch(function(err) {
+      if (st) st.textContent = 'Tap to play';
+    });
+  }, { once: true });
+  trackAudio.addEventListener('error', function(e) {
+    if (st) st.textContent = 'ERR: could not load track';
   });
 }
 
-function mkStop() {
-  if (mkInstance) {
-    try { mkInstance.stop(); } catch(e) {}
+function stopTrack() {
+  if (trackAudio) {
+    try { trackAudio.pause(); trackAudio.currentTime = 0; } catch(e) {}
+    trackAudio = null;
   }
 }
 function pickSong(e, idx) {
@@ -761,7 +623,7 @@ function startJam(e) {
   document.getElementById('menu').style.display = 'none';
   document.getElementById('playScreen').style.display = 'flex';
   updateLyrics();
-  mkPlay(songs[curSong]);
+  playTrack(songs[curSong]);
 }
 
 function syncLyrics(e) {
@@ -776,31 +638,31 @@ function syncLyrics(e) {
 function restartSong(e) {
   if (!noDouble(e)) return;
   stopBacking();
-  mkStop();
+  stopTrack();
   var ctx = getCtx();
   if (ctx) ctx.resume();
   jamStart = Date.now() + 999999;
   awaitingPlay = true;
   lyricIdx = 0;
   playDrum(0);
-  mkPlay(songs[curSong]);
+  playTrack(songs[curSong]);
 }
 
 function goBack(e) {
   if (!noDouble(e)) return;
   jamRunning = false;
   stopBacking();
-  mkStop();
+  stopTrack();
   document.getElementById('playScreen').style.display = 'none';
   document.getElementById('menu').style.display = 'flex';
 }
 
 function updateLyrics() {
   if (!jamRunning) return;
-  // Use MusicKit's actual playback position when available
+  // Use track audio's actual playback position when available
   var elapsed;
-  if (mkInstance && mkInstance.currentPlaybackTime > 0) {
-    elapsed = mkInstance.currentPlaybackTime * 1000; // seconds → ms
+  if (trackAudio && trackAudio.currentTime > 0) {
+    elapsed = trackAudio.currentTime * 1000; // seconds → ms
   } else {
     elapsed = Date.now() - jamStart;
   }

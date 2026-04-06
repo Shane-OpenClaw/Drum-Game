@@ -521,38 +521,56 @@ var MK_TOKEN = 'eyJhbGciOiJFUzI1NiIsImtpZCI6IkczVlM0Mzg0UTYifQ.eyJpc3MiOiI5RlY3S
 
 function initMusicKit() {
   if (mkInstance) return Promise.resolve(mkInstance);
-  return MusicKit.configure({
-    developerToken: MK_TOKEN,
-    app: { name: 'Drum Like Barker', build: '1.0' }
-  }).then(function() {
+  try {
+    var p = MusicKit.configure({
+      developerToken: MK_TOKEN,
+      app: { name: 'Drum Like Barker', build: '1.0' }
+    });
+    // v3 configure may return promise or instance
+    if (p && typeof p.then === 'function') {
+      return p.then(function() {
+        mkInstance = MusicKit.getInstance();
+        mkReady = true;
+        return mkInstance;
+      });
+    } else {
+      mkInstance = MusicKit.getInstance();
+      mkReady = true;
+      return Promise.resolve(mkInstance);
+    }
+  } catch(e) {
+    // Already configured — just get instance
     mkInstance = MusicKit.getInstance();
     mkReady = true;
-    return mkInstance;
-  });
+    return Promise.resolve(mkInstance);
+  }
 }
 
 function mkPlay(song) {
   var st = document.getElementById('mkStatus');
-  if (st) st.textContent = 'Loading track...';
+  if (st) st.textContent = 'Initializing...';
   return initMusicKit().then(function(mk) {
-    // Must authorize (Apple Music sign-in) before playback works
+    if (st) st.textContent = 'MusicKit ready (auth=' + mk.isAuthorized + ')';
     if (!mk.isAuthorized) {
       if (st) st.textContent = 'Sign into Apple Music...';
-      return mk.authorize().then(function() { return mk; });
+      return mk.authorize().then(function() {
+        if (st) st.textContent = 'Authorized!';
+        return mk;
+      });
     }
     return mk;
   }).then(function(mk) {
-    if (st) st.textContent = 'Loading track...';
-    return mk.setQueue({ song: String(song.am.track) });
-  }).then(function() {
+    if (st) st.textContent = 'Loading track ' + song.am.track + '...';
+    return mk.setQueue({ song: String(song.am.track) }).then(function() { return mk; });
+  }).then(function(mk) {
     if (st) st.textContent = '♪ PLAYING — DRUM ALONG!';
-    return mkInstance.play();
+    return mk.play();
   }).then(function() {
     jamStart = Date.now();
     lyricIdx = 0;
     awaitingPlay = false;
   }).catch(function(err) {
-    if (st) st.textContent = 'Error: ' + err.message;
+    if (st) st.textContent = 'ERR: ' + (err.message || err);
   });
 }
 

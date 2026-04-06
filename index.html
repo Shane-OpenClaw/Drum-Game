@@ -62,7 +62,6 @@
   #lyricLine { font-family:'Permanent Marker',cursive; font-size:4.5vw; color:#fff; min-height:2em; line-height:1.3; margin-top:4px; transition:opacity 0.2s; }
   #lyricNext { font-size:2.5vw; color:#555; min-height:1.2em; margin-top:2px; }
   #topBtns { position:absolute; top:6px; right:8px; display:flex; gap:6px; z-index:10; }
-  .sync-btn { background:#00ff88 !important; }
   .top-btn {
     background:#ff1493; border:none; color:#000;
     font-family:'Permanent Marker',cursive; font-size:3.5vw;
@@ -116,15 +115,13 @@
     <strong>HOW TO PLAY:</strong><br>
     1. Pick a song & hit LET'S GO<br>
     2. The real track plays automatically<br>
-    3. YOU are Travis Barker — bring the beat!<br>
-    4. Use SYNC if lyrics drift 🤘
+    3. YOU are Travis Barker — bring the beat! 🤘
   </div>
 </div>
 
 <div id="playScreen">
   <div id="topBar">
     <div id="topBtns">
-      <button class="top-btn sync-btn" ontouchstart="syncLyrics(event)" onclick="syncLyrics(event)">⇆ SYNC</button>
       <button class="top-btn" ontouchstart="restartSong(event)" onclick="restartSong(event)">↺ RESTART</button>
       <button class="top-btn" ontouchstart="goBack(event)" onclick="goBack(event)">🎵 PICK SONG</button>
     </div>
@@ -624,15 +621,6 @@ function startJam(e) {
   document.getElementById('playScreen').style.display = 'flex';
   updateLyrics();
   playTrack(songs[curSong]);
-}
-
-function syncLyrics(e) {
-  if (!noDouble(e)) return;
-  jamStart = Date.now();
-  lyricIdx = 0;
-  awaitingPlay = false;
-  var ms = document.getElementById('musicStatus');
-  if (ms) ms.textContent = '♪ PLAYING — DRUM ALONG!';
 }
 
 function restartSong(e) {

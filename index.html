@@ -602,6 +602,104 @@ function initMusicKit() {
   }
 }
 
+// ==== DRUM-REDUCTION EQ ====
+// Intercept MusicKit's audio element and route through filters
+// that cut drum frequencies while preserving vocals
+var mkAudioTapped = false;
+var mkEqChain = null;
+
+function tapMusicKitAudio() {
+  if (mkAudioTapped) return;
+  var ctx = getCtx(); if (!ctx) return;
+
+  // MusicKit creates an <audio> element — find it
+  var els = document.querySelectorAll('audio');
+  var target = null;
+  for (var i = 0; i < els.length; i++) {
+    // Skip our silent-switch audio
+    if (els[i] === audioEl) continue;
+    target = els[i];
+    break;
+  }
+  if (!target) {
+    // Also check for video elements (some MusicKit versions use <video>)
+    var vels = document.querySelectorAll('video');
+    if (vels.length > 0) target = vels[0];
+  }
+  if (!target) return;
+
+  try {
+    var src = ctx.createMediaElementSource(target);
+
+    // Cut kick drum (sub bass): low-shelf cut below 100Hz
+    var kickCut = ctx.createBiquadFilter();
+    kickCut.type = 'lowshelf';
+    kickCut.frequency.value = 100;
+    kickCut.gain.value = -12; // -12dB cut
+
+    // Cut snare body: notch around 250Hz
+    var snareCut = ctx.createBiquadFilter();
+    snareCut.type = 'peaking';
+    snareCut.frequency.value = 250;
+    snareCut.Q.value = 1.5;
+    snareCut.gain.value = -10;
+
+    // Cut snare crack / hi-hat: cut around 3-5kHz
+    var crackCut = ctx.createBiquadFilter();
+    crackCut.type = 'peaking';
+    crackCut.frequency.value = 4000;
+    crackCut.Q.value = 1.0;
+    crackCut.gain.value = -10;
+
+    // Cut cymbals: high-shelf cut above 8kHz
+    var cymCut = ctx.createBiquadFilter();
+    cymCut.type = 'highshelf';
+    cymCut.frequency.value = 8000;
+    cymCut.gain.value = -14;
+
+    // Boost vocal presence: 800Hz-2kHz
+    var voxBoost = ctx.createBiquadFilter();
+    voxBoost.type = 'peaking';
+    voxBoost.frequency.value = 1200;
+    voxBoost.Q.value = 0.8;
+    voxBoost.gain.value = 4;
+
+    // Overall music volume control
+    var mkGain = ctx.createGain();
+    mkGain.gain.value = 0.6; // lower music vs drums
+
+    src.connect(kickCut);
+    kickCut.connect(snareCut);
+    snareCut.connect(crackCut);
+    crackCut.connect(cymCut);
+    cymCut.connect(voxBoost);
+    voxBoost.connect(mkGain);
+    mkGain.connect(ctx.destination);
+
+    mkAudioTapped = true;
+    mkEqChain = { src: src, gain: mkGain, filters: [kickCut, snareCut, crackCut, cymCut, voxBoost] };
+  } catch(e) {
+    // createMediaElementSource can only be called once per element
+    // or CORS may block it — silently fall back to normal playback
+  }
+}
+
+// Watch for MusicKit audio elements appearing in the DOM
+var mkObserver = new MutationObserver(function(mutations) {
+  if (mkAudioTapped) return;
+  for (var i = 0; i < mutations.length; i++) {
+    for (var j = 0; j < mutations[i].addedNodes.length; j++) {
+      var node = mutations[i].addedNodes[j];
+      if (node.tagName === 'AUDIO' || node.tagName === 'VIDEO') {
+        // Short delay to let MusicKit finish setting up the element
+        setTimeout(tapMusicKitAudio, 200);
+        return;
+      }
+    }
+  }
+});
+mkObserver.observe(document.documentElement, { childList: true, subtree: true });
+
 function mkPlay(song) {
   var st = document.getElementById('mkStatus');
   if (st) st.textContent = 'Initializing...';
@@ -619,9 +717,13 @@ function mkPlay(song) {
     if (st) st.textContent = 'Loading track ' + song.am.track + '...';
     return mk.setQueue({ song: String(song.am.track) }).then(function() { return mk; });
   }).then(function(mk) {
+    // Try to tap the audio element before playing
+    setTimeout(tapMusicKitAudio, 100);
     if (st) st.textContent = '♪ PLAYING — DRUM ALONG!';
     return mk.play();
   }).then(function() {
+    // Try again after playback starts
+    setTimeout(tapMusicKitAudio, 500);
     jamStart = Date.now();
     lyricIdx = 0;
     awaitingPlay = false;

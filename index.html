@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>DRUM LIKE BARKER</title>
+<meta property="og:title" content="DRUM LIKE BARKER">
+<meta property="og:description" content="A Blink-182 drumming game — YOU are Travis Barker!">
+<meta property="og:type" content="website">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -61,10 +64,10 @@
   #mkStatus { font-family:'Permanent Marker',cursive; font-size:2.5vw; color:#00ff88; text-align:center; margin:4px 0; }
   #lyricLine { font-family:'Permanent Marker',cursive; font-size:4.5vw; color:#fff; min-height:2em; line-height:1.3; margin-top:4px; transition:opacity 0.2s; }
   #lyricNext { font-size:3.2vw; color:#fff; opacity:0.7; min-height:1.2em; margin-top:2px; }
-  #scrubWrap { width:90%; max-width:400px; margin:6px auto 0; }
-  #scrubBar { -webkit-appearance:none; width:100%; height:6px; background:#333; border-radius:3px; outline:none; }
-  #scrubBar::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; background:#ff1493; border-radius:50%; cursor:pointer; }
-  #scrubTime { font-size:2.5vw; color:#888; text-align:center; margin-top:2px; }
+  #scrubWrap { width:92%; max-width:400px; margin:0 auto; padding:8px 0 4px; background:#111; }
+  #scrubBar { -webkit-appearance:none; width:100%; height:8px; background:#333; border-radius:4px; outline:none; touch-action:none; }
+  #scrubBar::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; background:#ff1493; border-radius:50%; cursor:pointer; box-shadow:0 0 6px #ff149388; }
+  #scrubTime { font-size:2.8vw; color:#aaa; text-align:center; margin-top:3px; font-family:'Courier New',monospace; }
   #topBtns { position:absolute; top:6px; right:8px; display:flex; gap:6px; z-index:10; }
   .top-btn {
     background:#ff1493; border:none; color:#000;
@@ -133,9 +136,9 @@
     <div id="mkStatus"></div>
     <div id="lyricLine"></div>
     <div id="lyricNext"></div>
-    <div id="scrubWrap"><input type="range" id="scrubBar" min="0" max="100" value="0" step="0.1"><div id="scrubTime">0:00 / 0:00</div></div>
     <div id="musicStatus"></div>
   </div>
+  <div id="scrubWrap"><input type="range" id="scrubBar" min="0" max="100" value="0" step="0.1"><div id="scrubTime">0:00 / 0:00</div></div>
   <div id="drumKit">
     <div class="drum" id="crash" data-d="0"><div class="flash"></div><div class="name">CRASH</div></div>
     <div class="drum" id="ride"  data-d="1"><div class="flash"></div><div class="name">RIDE</div></div>
